@@ -1,6 +1,6 @@
 # Cloud Deployment Guide
 
-This project ships with a Dockerfile and a FastAPI server. Below are two quick deployment options.
+This project ships with a Dockerfile and a FastAPI server. Below are three quick deployment options.
 
 ## Option A: Render (free tier)
 
@@ -48,6 +48,49 @@ az containerapp create \
 ```bash
 curl -s https://<app-domain>/health
 ```
+
+## Option C: AWS App Runner (recommended)
+
+No servers to manage. Uses ECR for images and App Runner for HTTPS, autoscaling, health checks.
+
+Prereqs
+- AWS account and region (e.g., us-east-1)
+- ECR repository (e.g., rag-service)
+- Use AWS SSO for CLI (no long-term access keys):
+  - `aws configure sso`; `aws sso login`
+
+Build and push image to ECR
+```bash
+# variables
+export AWS_REGION=us-east-1
+export AWS_ACCOUNT_ID=<your-12-digit-account-id>
+export ECR_REPO=rag-service
+export IMAGE_TAG=main-$(date +%Y%m%d%H%M)
+
+# create repo (idempotent)
+aws ecr create-repository --repository-name "$ECR_REPO" --region "$AWS_REGION" || true
+
+# login to ECR
+aws ecr get-login-password --region "$AWS_REGION" \
+| docker login --username AWS --password-stdin "$AWS_ACCOUNT_ID".dkr.ecr."$AWS_REGION".amazonaws.com
+
+# build, tag, push
+docker build -t "$ECR_REPO:$IMAGE_TAG" .
+docker tag "$ECR_REPO:$IMAGE_TAG" "$AWS_ACCOUNT_ID".dkr.ecr."$AWS_REGION".amazonaws.com/"$ECR_REPO:$IMAGE_TAG"
+docker push "$AWS_ACCOUNT_ID".dkr.ecr."$AWS_REGION".amazonaws.com/"$ECR_REPO:$IMAGE_TAG"
+```
+
+Create App Runner service (Console)
+- App Runner → Create service → Source: Amazon ECR → pick your image tag
+- Port: 8000; Health check path: /health
+- Environment variables: set GEMINI_API_KEY (required), optional MODEL_NAME=gemini-2.5-flash
+- Auto deploy from ECR: On
+- After Running, test: https://<apprunner-url>/health and https://<apprunner-url>/docs
+
+Optional: Custom domain + HTTPS
+- Route 53 hosted zone for your domain
+- ACM certificate in same region → DNS validate
+- App Runner → Custom domains → attach cert → add CNAME → wait Ready
 
 ## Health Verification
 
