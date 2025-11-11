@@ -1,0 +1,107 @@
+AWSTemplateFormatVersion: '2010-09-09'
+Description: App Runner service for RAG system with ECR image and IAM access role
+
+Parameters:
+  ServiceName:
+    Type: String
+    Default: rag-service
+    Description: Name of the App Runner service
+  EcrImageUri:
+    Type: String
+    Description: Full ECR image URI with tag (e.g., 123456789012.dkr.ecr.eu-west-1.amazonaws.com/rag:main-<sha>)
+  Cpu:
+    Type: String
+    Default: '1024'
+    AllowedValues: ['256', '512', '1024', '2048', '4096']
+    Description: vCPU (in App Runner units)
+  Memory:
+    Type: String
+    Default: '2048'
+    AllowedValues: ['512', '1024', '2048', '3072', '4096']
+    Description: Memory (MiB)
+  Port:
+    Type: Number
+    Default: 8000
+  HealthPath:
+    Type: String
+    Default: /health
+  EnvGeminiApiKey:
+    Type: String
+    NoEcho: true
+    Description: Gemini API key used by the service
+  EnvModelName:
+    Type: String
+    Default: gemini-2.5-flash
+  EnvLogLevel:
+    Type: String
+    Default: INFO
+  EnvEnableReranker:
+    Type: String
+    Default: '0'
+    AllowedValues: ['0', '1']
+
+Resources:
+  AppRunnerEcrAccessRole:
+    Type: AWS::IAM::Role
+    Properties:
+      RoleName: !Sub '${ServiceName}-apprunner-ecr-access'
+      AssumeRolePolicyDocument:
+        Version: '2012-10-17'
+        Statement:
+          - Effect: Allow
+            Principal:
+              Service: build.apprunner.amazonaws.com
+            Action: 'sts:AssumeRole'
+      Policies:
+        - PolicyName: EcrReadOnly
+          PolicyDocument:
+            Version: '2012-10-17'
+            Statement:
+              - Effect: Allow
+                Action:
+                  - ecr:GetAuthorizationToken
+                  - ecr:BatchGetImage
+                  - ecr:GetDownloadUrlForLayer
+                  - ecr:BatchCheckLayerAvailability
+                  - ecr:DescribeImages
+                Resource: '*'
+
+  RagAppRunnerService:
+    Type: AWS::AppRunner::Service
+    Properties:
+      ServiceName: !Ref ServiceName
+      SourceConfiguration:
+        AutoDeploymentsEnabled: true
+        AuthenticationConfiguration:
+          AccessRoleArn: !GetAtt AppRunnerEcrAccessRole.Arn
+        ImageRepository:
+          ImageIdentifier: !Ref EcrImageUri
+          ImageRepositoryType: ECR
+          ImageConfiguration:
+            Port: !Ref Port
+            RuntimeEnvironmentVariables:
+              - Name: GEMINI_API_KEY
+                Value: !Ref EnvGeminiApiKey
+              - Name: MODEL_NAME
+                Value: !Ref EnvModelName
+              - Name: LOG_LEVEL
+                Value: !Ref EnvLogLevel
+              - Name: RAG_ENABLE_RERANKER
+                Value: !Ref EnvEnableReranker
+      InstanceConfiguration:
+        Cpu: !Ref Cpu
+        Memory: !Ref Memory
+      HealthCheckConfiguration:
+        Protocol: HTTP
+        Path: !Ref HealthPath
+        Interval: 10
+        Timeout: 5
+        HealthyThreshold: 1
+        UnhealthyThreshold: 5
+
+Outputs:
+  ServiceArn:
+    Value: !GetAtt RagAppRunnerService.ServiceArn
+  ServiceUrl:
+    Value: !GetAtt RagAppRunnerService.ServiceUrl
+    Description: Public URL of the App Runner service

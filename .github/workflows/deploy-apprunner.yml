@@ -1,0 +1,90 @@
+name: Deploy App Runner
+
+on:
+  workflow_dispatch:
+    inputs:
+      image_tag:
+        description: ECR image tag to deploy (leave empty to deploy latest)
+        required: false
+        default: ''
+      service_name:
+        description: App Runner service name
+        required: false
+        default: rag-service
+      log_level:
+        description: LOG_LEVEL env var
+        required: false
+        default: INFO
+      reranker:
+        description: Set RAG_ENABLE_RERANKER (0 or 1)
+        required: false
+        default: '0'
+
+permissions:
+  id-token: write
+  contents: read
+
+env:
+  AWS_REGION: eu-west-1
+  ECR_REPO: rag
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Configure AWS credentials via OIDC
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          role-to-assume: ${{ vars.AWS_ROLE_TO_ASSUME }}
+          aws-region: ${{ env.AWS_REGION }}
+
+      - name: Determine ECR registry and image tag
+        id: vars
+        shell: bash
+        run: |
+          ACCOUNT_ID=$(aws sts get-caller-identity --query 'Account' --output text)
+          echo "account_id=$ACCOUNT_ID" >> $GITHUB_OUTPUT
+          REGISTRY="$ACCOUNT_ID.dkr.ecr.${AWS_REGION}.amazonaws.com"
+          echo "registry=$REGISTRY" >> $GITHUB_OUTPUT
+          if [ -z "${{ inputs.image_tag }}" ]; then
+            TAG=$(aws ecr describe-images --repository-name "$ECR_REPO" \
+              --query 'reverse(sort_by(imageDetails,& imagePushedAt))[0].imageTags[0]' --output text)
+          else
+            TAG='${{ inputs.image_tag }}'
+          fi
+          echo "tag=$TAG" >> $GITHUB_OUTPUT
+          echo "uri=$REGISTRY/$ECR_REPO:$TAG" >> $GITHUB_OUTPUT
+
+      - name: Deploy CloudFormation stack (App Runner)
+        env:
+          IMAGE_URI: ${{ steps.vars.outputs.uri }}
+          SERVICE_NAME: ${{ inputs.service_name }}
+          LOG_LEVEL: ${{ inputs.log_level }}
+          RERANKER: ${{ inputs.reranker }}
+          GEMINI_API_KEY: ${{ secrets.GEMINI_API_KEY }}
+        run: |
+          if [ -z "$GEMINI_API_KEY" ]; then
+            echo "GEMINI_API_KEY secret is not set" >&2
+            exit 1
+          fi
+          aws cloudformation deploy \
+            --stack-name rag-apprunner \
+            --template-file aws/app-runner-service.yaml \
+            --capabilities CAPABILITY_NAMED_IAM \
+            --parameter-overrides \
+              ServiceName="$SERVICE_NAME" \
+              EcrImageUri="$IMAGE_URI" \
+              EnvGeminiApiKey="$GEMINI_API_KEY" \
+              EnvLogLevel="$LOG_LEVEL" \
+              EnvEnableReranker="$RERANKER"
+
+      - name: Output App Runner URL
+        id: output
+        run: |
+          URL=$(aws cloudformation describe-stacks --stack-name rag-apprunner \
+            --query 'Stacks[0].Outputs[?OutputKey==`ServiceUrl`].OutputValue' --output text)
+          echo "url=$URL" >> $GITHUB_OUTPUT
+          echo "Deployed App Runner URL: $URL"

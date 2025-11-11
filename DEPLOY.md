@@ -51,46 +51,77 @@ curl -s https://<app-domain>/health
 
 ## Option C: AWS App Runner (recommended)
 
-No servers to manage. Uses ECR for images and App Runner for HTTPS, autoscaling, health checks.
+Fully managed HTTPS + autoscaling. Integrated CI here pushes images to ECR and can deploy App Runner via CloudFormation.
 
 Prereqs
-- AWS account and region (e.g., us-east-1)
-- ECR repository (e.g., rag-service)
-- Use AWS SSO for CLI (no long-term access keys):
-  - `aws configure sso`; `aws sso login`
+- AWS account ID (you provided: `920822856790`)
+- Region (we use: `eu-west-1`)
+- GitHub OIDC IAM role with ECR + CloudFormation + App Runner permissions; store its ARN in repository variable `AWS_ROLE_TO_ASSUME`
+- GitHub secret `GEMINI_API_KEY`
 
-Build and push image to ECR
+### 1. Image Build & Push (Automatic on each push to `main`)
+Workflow: `.github/workflows/ecr-push.yml` (already created)
+Action: When you push to `main`, it:
+1. Assumes `AWS_ROLE_TO_ASSUME` via OIDC
+2. Builds Docker image
+3. Tags `rag:main-<commit-sha>`
+4. Pushes to `920822856790.dkr.ecr.eu-west-1.amazonaws.com/rag`
+
+Manual trigger alternative if needed:
 ```bash
-# variables
-export AWS_REGION=us-east-1
-export AWS_ACCOUNT_ID=<your-12-digit-account-id>
-export ECR_REPO=rag-service
-export IMAGE_TAG=main-$(date +%Y%m%d%H%M)
-
-# create repo (idempotent)
+export AWS_REGION=eu-west-1
+export AWS_ACCOUNT_ID=920822856790
+export ECR_REPO=rag
+IMAGE_TAG=manual-$(date +%Y%m%d%H%M)
 aws ecr create-repository --repository-name "$ECR_REPO" --region "$AWS_REGION" || true
-
-# login to ECR
-aws ecr get-login-password --region "$AWS_REGION" \
-| docker login --username AWS --password-stdin "$AWS_ACCOUNT_ID".dkr.ecr."$AWS_REGION".amazonaws.com
-
-# build, tag, push
+aws ecr get-login-password --region "$AWS_REGION" | docker login --username AWS --password-stdin "$AWS_ACCOUNT_ID".dkr.ecr."$AWS_REGION".amazonaws.com
 docker build -t "$ECR_REPO:$IMAGE_TAG" .
 docker tag "$ECR_REPO:$IMAGE_TAG" "$AWS_ACCOUNT_ID".dkr.ecr."$AWS_REGION".amazonaws.com/"$ECR_REPO:$IMAGE_TAG"
 docker push "$AWS_ACCOUNT_ID".dkr.ecr."$AWS_REGION".amazonaws.com/"$ECR_REPO:$IMAGE_TAG"
 ```
 
-Create App Runner service (Console)
-- App Runner → Create service → Source: Amazon ECR → pick your image tag
-- Port: 8000; Health check path: /health
-- Environment variables: set GEMINI_API_KEY (required), optional MODEL_NAME=gemini-2.5-flash
-- Auto deploy from ECR: On
-- After Running, test: https://<apprunner-url>/health and https://<apprunner-url>/docs
+### 2. Deploy / Update App Runner Service
+Workflow: `.github/workflows/deploy-apprunner.yml` (manual dispatch)
+Steps:
+1. In GitHub → Actions → Deploy App Runner → Run workflow
+2. (Optional) Provide `image_tag` (else it finds the latest pushed)
+3. Workflow deploys CloudFormation template `aws/app-runner-service.yaml` creating/updating:
+   - IAM role granting App Runner pull access to ECR
+   - App Runner service with env vars (`GEMINI_API_KEY`, `MODEL_NAME`, `LOG_LEVEL`, `RAG_ENABLE_RERANKER`)
+4. Outputs the public service URL.
 
-Optional: Custom domain + HTTPS
-- Route 53 hosted zone for your domain
-- ACM certificate in same region → DNS validate
-- App Runner → Custom domains → attach cert → add CNAME → wait Ready
+### 3. Verify
+```bash
+curl -s https://<service-url>/health
+curl -s https://<service-url>/docs
+```
+
+### 4. Custom Domain (Optional)
+1. Request ACM certificate in `eu-west-1` for `yourdomain.com` + `api.yourdomain.com`
+2. Validate via Route 53 CNAMEs
+3. App Runner → Custom domains → Add domain → Attach certificate → Add CNAME record pointing to target
+4. Wait status `Active`; re-test `/health`.
+
+### 5. Required Permissions Summary for OIDC Role
+Attach policy with:
+- `ecr:GetAuthorizationToken`, `ecr:BatchGetImage`, `ecr:GetDownloadUrlForLayer`
+- `ecr:DescribeImages`
+- `cloudformation:CreateStack`, `cloudformation:UpdateStack`, `cloudformation:DescribeStacks`
+- `apprunner:CreateService`, `apprunner:UpdateService`, `apprunner:DescribeService`, `apprunner:ListServices`
+- `iam:PassRole` (scoped to the created App Runner ECR access role ARN pattern)
+
+### 6. After First Deploy
+Update `SUBMISSION.md` live URLs:
+- API: `<service-url>/docs`
+- Health: `<service-url>/health`
+
+### Troubleshooting
+| Symptom | Fix |
+|---------|-----|
+| ECR image not found | Ensure ecr-push workflow ran and repository `rag` exists. |
+| CloudFormation failure on IAM | Check OIDC role has `CAPABILITY_NAMED_IAM` permission and `iam:PassRole`. |
+| 502 errors | Confirm health path `/health` reachable locally and service port set to 8000. |
+| Missing Gemini key | Set `GEMINI_API_KEY` secret in GitHub before dispatching deploy workflow. |
 
 ## Health Verification
 

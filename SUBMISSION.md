@@ -45,3 +45,17 @@ Provide your deployed link here:
 - API: https://<your-app-domain>/docs
 - UI:  https://<your-ui-domain>/
 
+### Deployment Status (AWS App Runner)
+
+- ECR Repo: `rag` (region `eu-west-1`)
+- Latest Image Tag: generated per commit (`main-<sha>`) via `ecr-push` workflow
+- CloudFormation Stack: `rag-apprunner` (deploy with `deploy-apprunner` workflow)
+- Next Manual Step: Run "Deploy App Runner" workflow once OIDC role & `GEMINI_API_KEY` secret are in place
+- After successful deploy: replace placeholders above with actual service URL
+
+Checklist Remaining:
+1. Set repo variable `AWS_ROLE_TO_ASSUME` with IAM role ARN
+2. Add secret `GEMINI_API_KEY`
+3. Push/dispatch workflows
+4. Paste live URLs here
+
