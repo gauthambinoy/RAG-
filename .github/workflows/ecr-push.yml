@@ -9,8 +9,8 @@ permissions:
   contents: read
 
 env:
-  AWS_REGION: us-east-1
-  ECR_REPO: rag-service
+  AWS_REGION: eu-west-1
+  ECR_REPO: rag
 
 jobs:
   build-and-push:
