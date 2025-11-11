@@ -1,103 +1,155 @@
-# RAG System - Data Scientist Challenge
+# Advanced RAG System for Enterprise Q&A
 
-Complete Retrieval-Augmented Generation (RAG) system for document Q&A.
+This repository contains a complete, production-ready Retrieval-Augmented Generation (RAG) system designed to answer questions from a private knowledge base of documents. It features a sophisticated hybrid retrieval pipeline, multi-provider LLM generation for robustness, and is fully containerized for deployment.
 
-**Status:** ✅ Fully Functional  
-**Deployment:** 🚀 Ready for Cloud Deployment (AWS ECS/Fargate)
-
----
-
-## 📋 Challenge Completion Status
-
-| Step | Component | Status | Score | Description |
-|------|-----------|--------|-------|-------------|
-| 1 | Data Preparation | ✅ Complete | 10/10 | 3 loaders (PDF, DOCX, Excel), preprocessing pipeline, 206 chunks from 4 documents |
-| 2 | Test Queries | ✅ Complete | 10/10 | 10 diverse queries (factual/data/comparison/technical/cross-doc) with difficulty levels |
-| 3 | Retrieval | ✅ Complete | 10/10 | **Hybrid** (Dense + BM25) + Cross-Encoder Reranking, 206 vector index |
-| 4 | Generation | ✅ Complete | 10/10 | Multi-provider (Gemini → OpenAI → OpenRouter), citation enforcement |
-| 5 | Evaluation | ✅ Complete | 10/10 | 6 automated metrics + human rubric, P@5=1.0, R@5=0.95, MRR=1.0 |
-| 6 | Deployment | 🚀 Ready |  | FastAPI + Streamlit UI, caching, cost tracking (AWS deployment steps provided) |
-
-Note: Reported metrics reflect the current test set. See `docs/ARCHITECTURE_BLUEPRINT.md` and `docs/aws_deployment_guide.md` for details.
+**Live Demo URL:** `[Placeholder for your deployed application URL]`
 
 ---
 
-## 🏗️ System Architecture
+## 📋 Core Features
+
+-   **Hybrid Retrieval Pipeline**: Combines the strengths of keyword-based search (BM25) and semantic vector search (FAISS) using Reciprocal Rank Fusion (RRF) to retrieve the most relevant document chunks.
+-   **Cross-Encoder Reranking**: Employs a `cross-encoder` model to re-rank the initial retrieved results for maximum precision before passing them to the generator.
+-   **Multi-LLM Generation Strategy**: Ensures high availability and cost-effectiveness by using a fallback chain: **Google Gemini** -> **OpenAI GPT** -> **OpenRouter (Free Models)**.
+-   **Source Citations**: The generated answer includes inline citations `[Source: file_name.pdf, Page: X]` to link back to the source documents, ensuring verifiability.
+-   **Deployment Ready**: Comes with a `Dockerfile` for easy containerization and deployment on cloud platforms like AWS, GCP, or Azure.
+-   **Modular & Scalable Architecture**: The `src` directory is organized by function (loaders, preprocessing, retrieval, generation), making the system easy to maintain and extend.
+
+---
+
+## 🏗️ System Architecture & Data Flow
+
+The pipeline processes a user's query in several stages to generate a cited, accurate answer.
 
 ```
-User Query: "What is transformer architecture?"
-                    ↓
-         [1] PREPROCESSING
-             - Normalize text
-             - Clean query
-                    ↓
-         [2] RETRIEVAL (Hybrid: Dense + BM25)
-             - Dense: Embed query → 384d vector → FAISS search
-             - Sparse: BM25 keyword search (TF-IDF)
-             - Fusion: Reciprocal Rank Fusion (RRF)
-             - Reranking: Cross-encoder top-k refinement
-             - Return top-5 chunks
-                    ↓
-         [3] CONTEXT FORMATTING
-             - Format retrieved chunks
-             - Add source attribution
-                    ↓
-         [4] GENERATION (Multi-Provider LLM)
-             - Primary: Gemini (2.5-pro, 2.5-flash)
-             - Fallback: OpenAI (key rotation)
-             - Final: OpenRouter (free models)
-             - Temperature = 0.1 (factual)
-             - Citation enforcement: [C#] tags
-                    ↓
-         [5] ANSWER + SOURCES
-             "The Transformer is a neural network
-              architecture based on self-attention..."
-              Sources: Attention_is_all_you_need.pdf
+User Query ───────────────> [Query Preprocessing] ──────────────────> [Hybrid Retrieval] ──────────> [Reranking] ──> [Context Formatting] ──> [LLM Generation] ──> Final Answer
+                             (Normalization)      |                     (BM25 + FAISS)                  (Cross-Encoder)      (Add Sources)         (Gemini/OpenAI)
+                                                  |
+                                                  └─> [Semantic Cache Check] ─(Cache Hit)─> Returns Cached Answer
+```
+
+1.  **Query Preprocessing**: The user's query is cleaned and normalized.
+2.  **Semantic Cache**: The system first checks if an answer for an identical query already exists in the cache to provide a near-instantaneous response.
+3.  **Hybrid Retrieval**:
+    *   **Dense Retrieval**: The query is encoded into a vector using `all-MiniLM-L6-v2`, which then searches a `FAISS` index for semantically similar document chunks.
+    *   **Sparse Retrieval**: A `BM25` index is used to find chunks containing relevant keywords.
+    *   **Fusion**: The results from both retrievers are combined using Reciprocal Rank Fusion (RRF) to produce a single, relevance-ranked list.
+4.  **Reranking**: A more powerful `cross-encoder` model re-evaluates the top results from the fusion step to improve precision.
+5.  **Generation**: The top-ranked, reranked document chunks are formatted into a context block and passed to an LLM (starting with Gemini) to generate a final, coherent answer with citations.
+
+---
+
+## 🚀 Getting Started
+
+### Prerequisites
+
+-   Python 3.10+
+-   An environment variable manager (e.g., `python-dotenv`)
+-   API keys for Google Gemini and/or OpenAI.
+
+### 1. Setup and Installation
+
+Clone the repository and set up the environment.
+
+```bash
+# Clone the repository
+git clone https://github.com/gauthambinoy/RAG-.git
+cd RAG-
+
+# Create and activate a virtual environment
+python3 -m venv .venv
+source .venv/bin/activate
+
+# Install dependencies
+pip install -r requirements.txt
+
+# Set up your API keys
+cp .env.example .env
+# Now, edit the .env file and add your API keys
+nano .env
+```
+
+### 2. Build the Knowledge Base Index
+
+Before running the application, you need to process your source documents and build the retrieval indices. Place your PDF, DOCX, and Excel files in the `data/documents/`, `data/pdfs/`, and `data/tables/` directories respectively.
+
+```bash
+# Run the index-building script
+# This creates the BM25 and FAISS indices and saves them to the `outputs` directory.
+python scripts/build_index.py
+```
+
+### 3. Run the Application
+
+You can interact with the RAG system via a Streamlit web interface or a FastAPI backend.
+
+**Option A: Run the Streamlit Dashboard**
+
+```bash
+streamlit run app/dashboard.py
+```
+
+**Option B: Run the FastAPI Server**
+
+```bash
+uvicorn app.api:app --host 0.0.0.0 --port 8000
 ```
 
 ---
 
-## ⚡ Key Features
+## 🐳 Docker & Deployment
 
-### Core Capabilities
-- ✅ **Hybrid Retrieval**: Dense (semantic) + BM25 (keyword) + Reciprocal Rank Fusion
-- ✅ **Cross-Encoder Reranking**: Top-20 → Top-5 precision refinement
-- ✅ **Multi-Provider LLM**: Gemini → OpenAI → OpenRouter with automatic fallback
-- ✅ **Citation System**: Inline [C#] tags for answer verification
-- ✅ **Comprehensive Evaluation**: 6 automated metrics + human rubric
-- ✅ **Interactive UI**: Streamlit web demo with real-time results
+The application is containerized for easy and repeatable deployments.
 
-### Production Features
-- ✅ **Answer Caching**: <1ms for repeated queries (1-hour TTL)
-- ✅ **Cost Tracking**: Per-query token counting and aggregated statistics
-- ✅ **Health Monitoring**: FastAPI /health endpoint with 30s checks
-- ✅ **Auto-Scaling**: CPU-based scaling on AWS ECS Fargate
-- ✅ **Secrets Management**: AWS Secrets Manager integration
-- ✅ **Docker Deployment**: Production-ready container image
+### Build the Docker Image
 
-### Developer Experience
-- ✅ **Modular Architecture**: Clean separation of concerns
-- ✅ **Comprehensive Docs**: README, deployment guide, evaluation rubric
-- ✅ **Type Hints**: Full typing throughout codebase
-- ✅ **Pytest Integration**: Automated testing suite
-- ✅ **Detailed Logging**: System events and performance tracking
+```bash
+docker build -t rag-system .
+```
+
+### Run the Docker Container
+
+```bash
+docker run -p 8000:8000 \
+  --env-file .env \
+  -v $(pwd)/outputs:/app/outputs \
+  rag-system
+```
+
+This command runs the FastAPI server. The `-v` flag mounts the `outputs` directory containing your indices into the container.
 
 ---
 
-## 📊 Key Metrics & Performance
+## 🔬 Findings & Design Trade-offs
 
-### **Document Processing**
-- **Documents processed:** 4 (2 PDFs, 1 DOCX, 1 Excel)
-- **Total text:** ~142,000 characters
-- **Chunks created:** 206 chunks (800 chars, 100 overlap)
-- **Preprocessing time:** ~2 seconds
+This section details the key design decisions and their rationale.
 
-### **Retrieval Performance**
-- **Strategy:** Hybrid (Dense + BM25 Sparse) + Cross-Encoder Reranking
-- **Dense model:** `sentence-transformers/all-MiniLM-L6-v2` (384d)
-- **Sparse model:** BM25 with TF-IDF (k1=1.5, b=0.75)
-- **Reranker:** `cross-encoder/ms-marco-MiniLM-L-6-v2`
-- **Fusion method:** Reciprocal Rank Fusion (dense_weight=0.6, sparse_weight=0.4)
+### 1. Retrieval Strategy: Hybrid Search (BM25 + FAISS)
+
+-   **Decision**: Instead of relying on a single retrieval method, I implemented a hybrid approach that combines keyword-based (BM25) and semantic (FAISS) search.
+-   **Findings**:
+    *   **BM25** excels at finding documents with specific keywords, acronyms, or jargon (e.g., "GPT-3").
+    *   **Vector Search (FAISS)** is better at finding conceptually related content, even if the exact keywords are not present (e.g., query "dangers of AI" matching text about "AI safety risks").
+    *   Combining them via **Reciprocal Rank Fusion (RRF)** provided a significant boost in retrieval relevance over either method alone.
+-   **Trade-off**: The hybrid approach adds complexity to the codebase and increases retrieval latency slightly. However, the dramatic improvement in accuracy was deemed a worthwhile trade-off for a high-quality Q&A system.
+
+### 2. Reranking: Cross-Encoder for Precision
+
+-   **Decision**: After the initial hybrid retrieval, a `cross-encoder/ms-marco-MiniLM-L-6-v2` model is used to re-rank the top ~20 results.
+-   **Findings**: The initial retrieval is fast but can sometimes place less relevant chunks in the top 3-5 positions. The cross-encoder, while slower, is far more accurate at determining the final relevance of a chunk to the query. This step was crucial for reducing noise and ensuring the context passed to the LLM was of the highest possible quality.
+-   **Trade-off**: Reranking is the most computationally expensive part of the retrieval pipeline. This adds latency to the overall response time. For applications requiring near-instantaneous answers, this step could be made optional or removed, at the cost of potentially lower-quality answers.
+
+### 3. Embedding Model: `sentence-transformers/all-MiniLM-L6-v2`
+
+-   **Decision**: I chose a small, high-performance model that can run locally without requiring an API call.
+-   **Findings**: `all-MiniLM-L6-v2` provides a fantastic balance of speed and performance. It's fast enough for real-time applications and powerful enough to capture the semantic meaning of the text effectively.
+-   **Trade-off**: While excellent, this model is not as powerful as larger, state-of-the-art embedding models available via APIs (like OpenAI's `text-embedding-3-large`). Using a larger model could yield better retrieval results for highly nuanced queries but would increase operational costs and introduce network latency.
+
+### 4. Generation: Multi-Provider LLM Fallback Chain
+
+-   **Decision**: The system does not rely on a single LLM provider. It uses a fallback chain (Gemini -> OpenAI -> OpenRouter).
+-   **Findings**: API services can experience downtime or rate limiting. This strategy makes the system more resilient. If the primary provider (Gemini) fails, it automatically switches to the secondary (OpenAI), and so on. It also offers a path to cost optimization by prioritizing cheaper or free models.
+-   **Trade-off**: This adds complexity to the configuration (requiring multiple API keys) and the generation logic. However, for any production-grade system, this level of robustness is essential.
 - **Index size:** 206 vectors (~309 KB FAISS + ~50 KB BM25)
 - **Index build time:** ~35 seconds (first run), <1s (cached)
 - **Query time:** ~100-150ms per query (including reranking)
