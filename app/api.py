@@ -81,9 +81,9 @@ class QueryResponse(BaseModel):
                 "sources": ["Attention_is_all_you_need.pdf"],
                 "num_chunks": 5,
                 "relevance_scores": [0.44, 0.43, 0.40, 0.39, 0.38],
-                "model": "gpt-3.5-turbo",
-                "provider": "openai",
-                "tokens_used": {"prompt_tokens": 500, "completion_tokens": 150, "total_tokens": 650}
+                "model": "gemini-2.5-flash",
+                "provider": "gemini",
+                "tokens_used": {"total_tokens": 650}
             }
         }
 

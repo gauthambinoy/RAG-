@@ -41,9 +41,10 @@ def find_and_load_all_documents():
     # We search in both the root directory AND the DATA/ subdirectory
     
     search_locations = [
-        "data/pdfs",      # PDF documents folder
-        "data/documents", # DOCX documents folder  
-        "data/tables"     # Excel/CSV tables folder
+        "data/pdfs",          # PDF documents folder
+        "data/documents",     # DOCX documents folder  
+        "data/tables",        # Excel/CSV tables folder
+        "data/raw_documents"  # Fallback for raw documents (common in this repo)
     ]
     
     file_patterns = {

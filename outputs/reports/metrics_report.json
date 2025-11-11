@@ -1,0 +1,266 @@
+{
+  "aggregate": {
+    "avg_precision_at_5": 1.0,
+    "avg_recall_at_5": 0.95,
+    "avg_mrr": 1.0,
+    "avg_phrase_coverage": 0.5700000000000001,
+    "avg_citation_coverage": 0.49215784215784214,
+    "hallucination_rate": 0.3,
+    "num_queries": 10
+  },
+  "per_query": [
+    {
+      "id": 1,
+      "query": "What is the transformer architecture?",
+      "category": "factual",
+      "difficulty": "easy",
+      "precision_at_5": 1.0,
+      "recall_at_5": 1.0,
+      "mrr": 1.0,
+      "expected_sources": [
+        "Attention_is_all_you_need (1) (3).pdf"
+      ],
+      "retrieved_sources": [
+        "Attention_is_all_you_need (1) (3).pdf",
+        "Attention_is_all_you_need (1) (3).pdf",
+        "Attention_is_all_you_need (1) (3).pdf",
+        "Attention_is_all_you_need (1) (3).pdf",
+        "Attention_is_all_you_need (1) (3).pdf"
+      ],
+      "phrase_coverage": 1.0,
+      "citation_coverage": 0.9090909090909091,
+      "hallucination_flag": false,
+      "provider": "gemini",
+      "model": "gemini-2.5-pro",
+      "answer": "Based on the provided documents, the Transformer architecture uses stacked self-attention and point-wise, fully connected layers for both an encoder and a decoder [C2]. It is designed to reduce the number of operations needed to relate signals from any two positions in an input or output sequence to a constant number [C5].\n\nKey components of the architecture include:\n*   **Encoder and Decoder Stacks:** The overall architecture consists of an encoder and a decoder [C2]. The encoder is composed of...",
+      "error": null
+    },
+    {
+      "id": 2,
+      "query": "What are the main provisions of the EU AI Act?",
+      "category": "factual",
+      "difficulty": "easy",
+      "precision_at_5": 1.0,
+      "recall_at_5": 1.0,
+      "mrr": 1.0,
+      "expected_sources": [
+        "EU AI Act Doc (1) (3).docx"
+      ],
+      "retrieved_sources": [
+        "EU AI Act Doc (1) (3).docx",
+        "EU AI Act Doc (1) (3).docx",
+        "EU AI Act Doc (1) (3).docx",
+        "EU AI Act Doc (1) (3).docx",
+        "EU AI Act Doc (1) (3).docx"
+      ],
+      "phrase_coverage": 0.75,
+      "citation_coverage": 0.5384615384615384,
+      "hallucination_flag": false,
+      "provider": "gemini",
+      "model": "gemini-2.5-pro",
+      "answer": "The main provisions of the EU AI Act involve classifying AI systems into four risk categories, with regulations corresponding to the level of risk, and placing specific obligations on providers and users of these systems [C1, C4].\n\n**Supporting Evidence:**\n\n*   **Risk-Based Classification:** The Act classifies AI according to its risk into four categories [C1]:\n    *   **Unacceptable Risk:** These AI systems are prohibited. Examples include social scoring systems and manipulative AI [C1, C4].\n  ...",
+      "error": null
+    },
+    {
+      "id": 3,
+      "query": "What was the inflation rate in 2020?",
+      "category": "data",
+      "difficulty": "easy",
+      "precision_at_5": 1.0,
+      "recall_at_5": 1.0,
+      "mrr": 1.0,
+      "expected_sources": [
+        "Inflation Calculator.xlsx"
+      ],
+      "retrieved_sources": [
+        "Inflation Calculator.xlsx"
+      ],
+      "phrase_coverage": 0.75,
+      "citation_coverage": 0.5,
+      "hallucination_flag": false,
+      "provider": "gemini",
+      "model": "gemini-2.5-pro",
+      "answer": "I cannot answer this based on the provided documents.\n\nThe provided context from an inflation calculator spreadsheet shows data for the year 1913 and a calculation example for the year 2021, but it does not contain any information about the inflation rate in 2020 [C1].",
+      "error": null
+    },
+    {
+      "id": 4,
+      "query": "How does self-attention mechanism work in transformers?",
+      "category": "technical",
+      "difficulty": "medium",
+      "precision_at_5": 1.0,
+      "recall_at_5": 1.0,
+      "mrr": 1.0,
+      "expected_sources": [
+        "Attention_is_all_you_need (1) (3).pdf"
+      ],
+      "retrieved_sources": [
+        "Attention_is_all_you_need (1) (3).pdf",
+        "Attention_is_all_you_need (1) (3).pdf",
+        "Attention_is_all_you_need (1) (3).pdf",
+        "Attention_is_all_you_need (1) (3).pdf",
+        "Attention_is_all_you_need (1) (3).pdf"
+      ],
+      "phrase_coverage": 0.4,
+      "citation_coverage": 0.42857142857142855,
+      "hallucination_flag": true,
+      "provider": "gemini",
+      "model": "gemini-2.5-flash",
+      "answer": "I cannot fully answer how the self-attention mechanism works in transformers based on the provided documents, as the detailed internal steps of how it computes representations by relating positions within a single sequence are not described.\n\nHowever, the context states the following:\n*   Self-attention is an attention mechanism that relates different positions of a single sequence in order to compute a representation of that sequence [C2].\n*   In the Transformer model, a multi-head self-attenti...",
+      "error": null
+    },
+    {
+      "id": 5,
+      "query": "What is DeepSeek-R1 and how does it use reinforcement learning?",
+      "category": "technical",
+      "difficulty": "medium",
+      "precision_at_5": 1.0,
+      "recall_at_5": 1.0,
+      "mrr": 1.0,
+      "expected_sources": [
+        "Deepseek-r1 (1).pdf"
+      ],
+      "retrieved_sources": [
+        "Deepseek-r1 (1).pdf",
+        "Deepseek-r1 (1).pdf",
+        "Deepseek-r1 (1).pdf",
+        "Deepseek-r1 (1).pdf",
+        "Deepseek-r1 (1).pdf"
+      ],
+      "phrase_coverage": 1.0,
+      "citation_coverage": 0.0,
+      "hallucination_flag": true,
+      "provider": "gemini",
+      "model": "gemini-2.5-pro",
+      "answer": "DeepSeek-R1 is one of DeepSeek-AI's first-generation reasoning models, developed to address issues like poor readability and language mixing found in its predecessor, DeepSeek-R1-Zero [C2, C5]. It aims to make reasoning processes more readable and to enhance reasoning performance [C2, C5].\n\nDeepSeek-R1 utilizes reinforcement learning (RL) after incorporating multi-stage training and \"human-friendly cold-start data\" [C2, C5]. The provided context does not explain the specific mechanics of how Dee...",
+      "error": null
+    },
+    {
+      "id": 6,
+      "query": "How has inflation changed from 1950 to 2021?",
+      "category": "data",
+      "difficulty": "medium",
+      "precision_at_5": 1.0,
+      "recall_at_5": 1.0,
+      "mrr": 1.0,
+      "expected_sources": [
+        "Inflation Calculator.xlsx"
+      ],
+      "retrieved_sources": [
+        "Inflation Calculator.xlsx"
+      ],
+      "phrase_coverage": 0.6,
+      "citation_coverage": 1.0,
+      "hallucination_flag": false,
+      "provider": "gemini",
+      "model": "gemini-2.5-pro",
+      "answer": "Based on the provided inflation calculator data, a value of 24.066666666666666 is associated with the base year 1950, and a value of 270.96975000000003 is associated with the calculation year 2021 [C1].\n\nThe document also provides an example calculation where a base value of 25 in 1950 has a calculated value of 281.47827216066486 in 2021 [C1].",
+      "error": null
+    },
+    {
+      "id": 7,
+      "query": "What are the key innovations in the transformer model?",
+      "category": "technical",
+      "difficulty": "medium",
+      "precision_at_5": 1.0,
+      "recall_at_5": 1.0,
+      "mrr": 1.0,
+      "expected_sources": [
+        "Attention_is_all_you_need (1) (3).pdf"
+      ],
+      "retrieved_sources": [
+        "Attention_is_all_you_need (1) (3).pdf",
+        "Attention_is_all_you_need (1) (3).pdf",
+        "Attention_is_all_you_need (1) (3).pdf",
+        "Attention_is_all_you_need (1) (3).pdf",
+        "Attention_is_all_you_need (1) (3).pdf"
+      ],
+      "phrase_coverage": 0.0,
+      "citation_coverage": 0.0,
+      "hallucination_flag": false,
+      "provider": "gemini",
+      "model": "gemini-2.5-flash",
+      "answer": "I cannot answer this based on the provided documents. The context describes the Transformer model's performance, training costs, and variations of its architecture, but it does not explicitly list or detail its \"key innovations\" [C1, C2, C3, C4, C5].",
+      "error": null
+    },
+    {
+      "id": 8,
+      "query": "Compare the attention mechanism in transformers with traditional RNN approaches",
+      "category": "comparison",
+      "difficulty": "hard",
+      "precision_at_5": 1.0,
+      "recall_at_5": 1.0,
+      "mrr": 1.0,
+      "expected_sources": [
+        "Attention_is_all_you_need (1) (3).pdf"
+      ],
+      "retrieved_sources": [
+        "Attention_is_all_you_need (1) (3).pdf",
+        "Attention_is_all_you_need (1) (3).pdf",
+        "Attention_is_all_you_need (1) (3).pdf",
+        "Attention_is_all_you_need (1) (3).pdf",
+        "Attention_is_all_you_need (1) (3).pdf"
+      ],
+      "phrase_coverage": 0.4,
+      "citation_coverage": 1.0,
+      "hallucination_flag": true,
+      "provider": "gemini",
+      "model": "gemini-2.5-flash",
+      "answer": "The Transformer model relies entirely on self-attention to compute representations of its input and output, explicitly without using sequence-aligned Recurrent Neural Networks (RNNs) or convolution [C3]. Jakob proposed replacing RNNs with self-attention [C2]. In contrast, traditional attention mechanisms are often used in conjunction with a recurrent network, but the Transformer eschews recurrence [C5].",
+      "error": null
+    },
+    {
+      "id": 9,
+      "query": "How do AI regulations address risks in machine learning systems?",
+      "category": "cross-document",
+      "difficulty": "hard",
+      "precision_at_5": 1.0,
+      "recall_at_5": 0.5,
+      "mrr": 1.0,
+      "expected_sources": [
+        "EU AI Act Doc (1) (3).docx",
+        "Deepseek-r1 (1).pdf"
+      ],
+      "retrieved_sources": [
+        "EU AI Act Doc (1) (3).docx",
+        "EU AI Act Doc (1) (3).docx",
+        "EU AI Act Doc (1) (3).docx",
+        "EU AI Act Doc (1) (3).docx",
+        "EU AI Act Doc (1) (3).docx"
+      ],
+      "phrase_coverage": 0.8,
+      "citation_coverage": 0.5454545454545454,
+      "hallucination_flag": false,
+      "provider": "gemini",
+      "model": "gemini-2.5-flash",
+      "answer": "AI regulations address risks in machine learning systems by classifying AI according to its risk level and applying different requirements based on that classification [C2, C5].\n\nThe classifications and their corresponding regulatory approaches are:\n*   **Unacceptable Risk:** These AI systems are prohibited. Examples include social scoring systems, manipulative AI, systems deploying subliminal or deceptive techniques to distort behavior and cause significant harm, and systems exploiting vulnerab...",
+      "error": null
+    },
+    {
+      "id": 10,
+      "query": "What is the learning rate used in DeepSeek-R1 training?",
+      "category": "specific-technical",
+      "difficulty": "hard",
+      "precision_at_5": 1.0,
+      "recall_at_5": 1.0,
+      "mrr": 1.0,
+      "expected_sources": [
+        "Deepseek-r1 (1).pdf"
+      ],
+      "retrieved_sources": [
+        "Deepseek-r1 (1).pdf",
+        "Deepseek-r1 (1).pdf",
+        "Deepseek-r1 (1).pdf",
+        "Deepseek-r1 (1).pdf",
+        "Deepseek-r1 (1).pdf"
+      ],
+      "phrase_coverage": 0.0,
+      "citation_coverage": 0.0,
+      "hallucination_flag": false,
+      "provider": "gemini",
+      "model": "gemini-2.5-flash",
+      "answer": "I cannot answer this based on the provided documents.",
+      "error": null
+    }
+  ]
+}

@@ -16,8 +16,14 @@ This prints for each query:
 """
 
 import os
+import sys
 import time
 from pathlib import Path
+
+# Ensure project root on path for direct invocation from alternate CWDs
+_ROOT = Path(__file__).resolve().parent.parent
+if str(_ROOT) not in sys.path:
+    sys.path.insert(0, str(_ROOT))
 
 from src.pipeline import RAGPipeline
 from src.queries.test_queries import get_all_queries

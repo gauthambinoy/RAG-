@@ -12,10 +12,14 @@ import sys
 from pathlib import Path
 from datetime import datetime
 
-# Add src to path
-sys.path.insert(0, str(Path(__file__).parent.parent / "src"))
-
-from generation.hallucination_detector_advanced import AdvancedHallucinationDetector
+# Robust import of AdvancedHallucinationDetector supporting both direct and src-prefixed
+try:
+    # Prefer absolute import when running from repo root
+    from src.generation.hallucination_detector_advanced import AdvancedHallucinationDetector
+except Exception:
+    # Fallback: add src to sys.path when executed from scripts/
+    sys.path.insert(0, str(Path(__file__).parent.parent / "src"))
+    from generation.hallucination_detector_advanced import AdvancedHallucinationDetector  # type: ignore[import-not-found]
 
 
 def generate_metrics_report():
@@ -26,6 +30,7 @@ def generate_metrics_report():
     print("="*80)
     
     detector = AdvancedHallucinationDetector()
+    print("\nNote: This evaluation uses a small synthetic hallucination test set to sanity-check the detector.\nIt is not intended to reflect end-to-end QA accuracy on your 20 real queries.\n")
     
     # Test cases covering diverse scenarios
     test_cases = [
@@ -179,7 +184,8 @@ def generate_metrics_report():
     avg_score = sum(r["hallucination_score"] for r in results) / len(results)
     perfect_tests = sum(1 for r in results if r["actual_quality"] == "EXCELLENT")
     matched_tests = sum(1 for r in results if r["match_expected"])
-    accuracy = (matched_tests / len(results)) * 100
+    accuracy_fraction = matched_tests / len(results)
+    accuracy = accuracy_fraction * 100
     
     print(f"\nAverage Hallucination Score: {avg_score:.3f}")
     print(f"Average Hallucination Percent: {avg_score*100:.1f}%")
@@ -187,9 +193,13 @@ def generate_metrics_report():
     print(f"Expected Match Accuracy: {matched_tests}/{len(results)} ({accuracy:.1f}%)")
     
     # Calculate false positive reduction
-    old_fp_rate = 0.30  # 30% false positives in v1
-    new_fp_rate = 1 - accuracy
-    fp_reduction = ((old_fp_rate - new_fp_rate) / old_fp_rate) * 100
+    old_fp_rate = 0.30  # 30% false positives in v1 (fraction)
+    new_fp_rate = max(0.0, 1.0 - accuracy_fraction)  # fraction in [0, 1]
+    # Guard against divide-by-zero and clamp output to sane range
+    if old_fp_rate > 0:
+        fp_reduction = ((old_fp_rate - new_fp_rate) / old_fp_rate) * 100
+    else:
+        fp_reduction = 0.0
     
     print(f"\nFalse Positive Rate (v1): {old_fp_rate*100:.1f}%")
     print(f"False Positive Rate (v2): {new_fp_rate*100:.1f}%")
@@ -197,7 +207,7 @@ def generate_metrics_report():
     
     # Overall rating
     old_rating = 9.7
-    improvement = (accuracy / 100) * 0.4  # 40% weight for perfect detection
+    improvement = accuracy_fraction * 0.4  # 40% weight for perfect detection
     new_rating = min(old_rating + improvement, 10.0)
     
     print(f"\nRating (v1): {old_rating}/10")
@@ -284,12 +294,13 @@ def generate_metrics_report():
     print(f"   Accuracy: {accuracy:.1f}%")
     print(f"   Expected Match: {matched_tests}/{len(results)}")
     
-    if new_rating >= 10.0:
-        print(f"\n🌟 EXCELLENT: System achieved 10++/10 rating!")
-    elif new_rating >= 9.8:
-        print(f"\n⭐ OUTSTANDING: System achieved near-perfect rating!")
-    elif new_rating >= 9.5:
-        print(f"\n✅ VERY GOOD: Significant improvement achieved!")
+    # Show banners only when consistent with accuracy
+    if accuracy_fraction >= 0.95 and new_rating >= 9.8:
+        print(f"\n🌟 EXCELLENT: System achieved near-perfect detection on this synthetic set.")
+    elif accuracy_fraction >= 0.85 and new_rating >= 9.5:
+        print(f"\n✅ VERY GOOD: Strong detection performance on this synthetic set.")
+    else:
+        print("\nℹ Note: Synthetic test accuracy is modest; use the 20-query QA run for real-world quality.")
     
     return report
 

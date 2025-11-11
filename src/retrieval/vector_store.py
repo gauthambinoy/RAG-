@@ -168,10 +168,15 @@ class VectorStore:
                 f"Mismatch: {len(embeddings)} embeddings but "
                 f"{len(chunks_data)} chunks"
             )
-        
-        if embeddings.shape[1] != self.dimension:
+
+        # Gracefully handle empty inputs (no-op)
+        if len(embeddings) == 0:
+            print("No embeddings to add; skipping vector store update.")
+            return
+
+        if embeddings.ndim != 2 or embeddings.shape[1] != self.dimension:
             raise ValueError(
-                f"Embedding dimension {embeddings.shape[1]} doesn't match "
+                f"Embedding dimension {embeddings.shape[1] if embeddings.ndim==2 else 'unknown'} doesn't match "
                 f"store dimension {self.dimension}"
             )
         

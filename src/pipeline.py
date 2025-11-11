@@ -53,7 +53,7 @@ DEFAULT_TOP_K = 5  # Number of chunks to retrieve
 MIN_SIMILARITY_SCORE = 0.3  # Filter low-relevance chunks
 
 # Generation parameters
-DEFAULT_LLM_MODEL = "gpt-3.5-turbo"
+DEFAULT_LLM_MODEL = "gemini-2.5-flash"
 DEFAULT_TEMPERATURE = 0.1
 
 

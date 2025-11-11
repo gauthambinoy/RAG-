@@ -1,0 +1,1041 @@
+{
+  "timestamp": "2025-11-11T12:10:31.566187",
+  "version": "2.0",
+  "improvements": [
+    {
+      "name": "Smart Tokenization",
+      "description": "Handles abbreviations, URLs, decimals correctly"
+    },
+    {
+      "name": "Adaptive Threshold",
+      "description": "Dynamic thresholds by doc type, entity density (0.55-0.85)"
+    },
+    {
+      "name": "Paraphrasing Detection",
+      "description": "Recognizes semantic equivalence with WordNet synonyms"
+    },
+    {
+      "name": "Grounding Chains",
+      "description": "Tracks WHERE each fact comes from with attribution"
+    },
+    {
+      "name": "Severity Levels",
+      "description": "Classifies hallucinations as MINOR/MODERATE/MAJOR/CRITICAL"
+    },
+    {
+      "name": "Fact Triple Extraction",
+      "description": "Fact-level verification using (Subject, Predicate, Object)"
+    },
+    {
+      "name": "Cross-Doc Consistency",
+      "description": "Verifies facts across multiple documents"
+    }
+  ],
+  "summary": {
+    "total_tests": 7,
+    "average_hallucination_score": 0.231,
+    "perfect_tests": 0,
+    "expected_match_accuracy": 28.57142857142857,
+    "false_positive_reduction_percent": -138.1,
+    "rating_v1": 9.7,
+    "rating_v2": 9.81,
+    "rating_improvement": 0.11
+  },
+  "test_results": [
+    {
+      "hallucination_score": 0.183,
+      "hallucination_percent": 18.3,
+      "total_sentences": 3,
+      "verified_count": 0,
+      "hallucinated_count": 3,
+      "severity_breakdown": {
+        "MINOR": 1,
+        "MODERATE": 2,
+        "MAJOR": 0,
+        "CRITICAL": 0
+      },
+      "grounding_chains": [
+        {
+          "sentence": "The Transformer architecture uses self-attention mechanisms.",
+          "grounded": false,
+          "confidence": 0.2727272727272727,
+          "grounded_in": {
+            "context_sentence": "The Transformer is based solely on attention mechanisms.",
+            "context_id": "chunk_0",
+            "similarity": 0.2727272727272727
+          },
+          "ungrounded_parts": [
+            "The Transformer architecture uses self-attention mechanisms."
+          ]
+        },
+        {
+          "sentence": "According to the\n            paper, self-attention allows each position to attend to all other positions.",
+          "grounded": false,
+          "confidence": 0.3125,
+          "grounded_in": {
+            "context_sentence": "Self-attention\n            allows the model to attend to different representation subspaces.",
+            "context_id": "chunk_1",
+            "similarity": 0.3125
+          },
+          "ungrounded_parts": [
+            "According to the\n            paper, self-attention allows each position to attend to all other positions."
+          ]
+        },
+        {
+          "sentence": "Multi-head attention enables multiple representation subspaces at different locations.",
+          "grounded": false,
+          "confidence": 0.2857142857142857,
+          "grounded_in": {
+            "context_sentence": "We employ\n            multi-head attention consisting of multiple representation subspaces.",
+            "context_id": "chunk_2",
+            "similarity": 0.2857142857142857
+          },
+          "ungrounded_parts": [
+            "Multi-head attention enables multiple representation subspaces at different locations."
+          ]
+        }
+      ],
+      "verified_facts": [],
+      "hallucinated_facts": [
+        {
+          "sentence": "The Transformer architecture uses self-attention mechanisms.",
+          "severity": "MINOR",
+          "weight": 0.1,
+          "grounding": {
+            "sentence": "The Transformer architecture uses self-attention mechanisms.",
+            "grounded": false,
+            "confidence": 0.2727272727272727,
+            "grounded_in": {
+              "context_sentence": "The Transformer is based solely on attention mechanisms.",
+              "context_id": "chunk_0",
+              "similarity": 0.2727272727272727
+            },
+            "ungrounded_parts": [
+              "The Transformer architecture uses self-attention mechanisms."
+            ]
+          }
+        },
+        {
+          "sentence": "According to the\n            paper, self-attention allows each position to attend to all other positions.",
+          "severity": "MODERATE",
+          "weight": 0.5,
+          "grounding": {
+            "sentence": "According to the\n            paper, self-attention allows each position to attend to all other positions.",
+            "grounded": false,
+            "confidence": 0.3125,
+            "grounded_in": {
+              "context_sentence": "Self-attention\n            allows the model to attend to different representation subspaces.",
+              "context_id": "chunk_1",
+              "similarity": 0.3125
+            },
+            "ungrounded_parts": [
+              "According to the\n            paper, self-attention allows each position to attend to all other positions."
+            ]
+          }
+        },
+        {
+          "sentence": "Multi-head attention enables multiple representation subspaces at different locations.",
+          "severity": "MODERATE",
+          "weight": 0.5,
+          "grounding": {
+            "sentence": "Multi-head attention enables multiple representation subspaces at different locations.",
+            "grounded": false,
+            "confidence": 0.2857142857142857,
+            "grounded_in": {
+              "context_sentence": "We employ\n            multi-head attention consisting of multiple representation subspaces.",
+              "context_id": "chunk_2",
+              "similarity": 0.2857142857142857
+            },
+            "ungrounded_parts": [
+              "Multi-head attention enables multiple representation subspaces at different locations."
+            ]
+          }
+        }
+      ],
+      "response_triples": [
+        [
+          "architecture",
+          "uses",
+          "mechanisms"
+        ],
+        [
+          "attention",
+          "enables",
+          "subspaces"
+        ]
+      ],
+      "context_triples": [
+        [
+          "We",
+          "employ",
+          "attention"
+        ]
+      ],
+      "cross_doc_consistency": {},
+      "confidence_level": "MEDIUM",
+      "status": "\u26a0\ufe0f  ACCEPTABLE",
+      "improvements_applied": [
+        "Smart Tokenization (spaCy)",
+        "Adaptive Semantic Threshold",
+        "Paraphrasing Detection",
+        "Grounding Chain Attribution",
+        "Hallucination Severity Levels",
+        "Fact Triple Extraction",
+        "Cross-Document Consistency"
+      ],
+      "test_name": "Perfect Grounding (Transformer Attention)",
+      "expected_quality": "EXCELLENT",
+      "doc_type": "technical",
+      "actual_quality": "GOOD",
+      "match_expected": false
+    },
+    {
+      "hallucination_score": 0.25,
+      "hallucination_percent": 25.0,
+      "total_sentences": 3,
+      "verified_count": 0,
+      "hallucinated_count": 3,
+      "severity_breakdown": {
+        "MINOR": 0,
+        "MODERATE": 3,
+        "MAJOR": 0,
+        "CRITICAL": 0
+      },
+      "grounding_chains": [
+        {
+          "sentence": "According to the contract, the parties consent to all terms and conditions.",
+          "grounded": false,
+          "confidence": 0.3125,
+          "grounded_in": {
+            "context_sentence": "The parties agree to abide by all terms of this agreement.",
+            "context_id": "chunk_0",
+            "similarity": 0.3125
+          },
+          "ungrounded_parts": [
+            "According to the contract, the parties consent to all terms and conditions."
+          ]
+        },
+        {
+          "sentence": "Each party acknowledges receiving a copy of this agreement.",
+          "grounded": false,
+          "confidence": 0.21428571428571427,
+          "grounded_in": {
+            "context_sentence": "Each party confirms\n            receipt of the agreement copy.",
+            "context_id": "chunk_1",
+            "similarity": 0.21428571428571427
+          },
+          "ungrounded_parts": [
+            "Each party acknowledges receiving a copy of this agreement."
+          ]
+        },
+        {
+          "sentence": "The terms apply\n            for the duration specified.",
+          "grounded": false,
+          "confidence": 0.16666666666666666,
+          "grounded_in": {
+            "context_sentence": "The provisions shall be effective for the\n            specified period.",
+            "context_id": "chunk_2",
+            "similarity": 0.16666666666666666
+          },
+          "ungrounded_parts": [
+            "The terms apply\n            for the duration specified."
+          ]
+        }
+      ],
+      "verified_facts": [],
+      "hallucinated_facts": [
+        {
+          "sentence": "According to the contract, the parties consent to all terms and conditions.",
+          "severity": "MODERATE",
+          "weight": 0.5,
+          "grounding": {
+            "sentence": "According to the contract, the parties consent to all terms and conditions.",
+            "grounded": false,
+            "confidence": 0.3125,
+            "grounded_in": {
+              "context_sentence": "The parties agree to abide by all terms of this agreement.",
+              "context_id": "chunk_0",
+              "similarity": 0.3125
+            },
+            "ungrounded_parts": [
+              "According to the contract, the parties consent to all terms and conditions."
+            ]
+          }
+        },
+        {
+          "sentence": "Each party acknowledges receiving a copy of this agreement.",
+          "severity": "MODERATE",
+          "weight": 0.5,
+          "grounding": {
+            "sentence": "Each party acknowledges receiving a copy of this agreement.",
+            "grounded": false,
+            "confidence": 0.21428571428571427,
+            "grounded_in": {
+              "context_sentence": "Each party confirms\n            receipt of the agreement copy.",
+              "context_id": "chunk_1",
+              "similarity": 0.21428571428571427
+            },
+            "ungrounded_parts": [
+              "Each party acknowledges receiving a copy of this agreement."
+            ]
+          }
+        },
+        {
+          "sentence": "The terms apply\n            for the duration specified.",
+          "severity": "MODERATE",
+          "weight": 0.5,
+          "grounding": {
+            "sentence": "The terms apply\n            for the duration specified.",
+            "grounded": false,
+            "confidence": 0.16666666666666666,
+            "grounded_in": {
+              "context_sentence": "The provisions shall be effective for the\n            specified period.",
+              "context_id": "chunk_2",
+              "similarity": 0.16666666666666666
+            },
+            "ungrounded_parts": [
+              "The terms apply\n            for the duration specified."
+            ]
+          }
+        }
+      ],
+      "response_triples": [],
+      "context_triples": [
+        [
+          "party",
+          "confirms",
+          "receipt"
+        ],
+        [
+          "provisions",
+          "be",
+          "effective"
+        ]
+      ],
+      "cross_doc_consistency": {},
+      "confidence_level": "LOW",
+      "status": "\u274c HIGH RISK",
+      "improvements_applied": [
+        "Smart Tokenization (spaCy)",
+        "Adaptive Semantic Threshold",
+        "Paraphrasing Detection",
+        "Grounding Chain Attribution",
+        "Hallucination Severity Levels",
+        "Fact Triple Extraction",
+        "Cross-Document Consistency"
+      ],
+      "test_name": "Paraphrased Response (Legal)",
+      "expected_quality": "GOOD",
+      "doc_type": "legal",
+      "actual_quality": "WARNING",
+      "match_expected": false
+    },
+    {
+      "hallucination_score": 0.183,
+      "hallucination_percent": 18.3,
+      "total_sentences": 3,
+      "verified_count": 0,
+      "hallucinated_count": 3,
+      "severity_breakdown": {
+        "MINOR": 1,
+        "MODERATE": 2,
+        "MAJOR": 0,
+        "CRITICAL": 0
+      },
+      "grounding_chains": [
+        {
+          "sentence": "The transformer was invented in 2014 by Donald Trump at Google.",
+          "grounded": false,
+          "confidence": 0.3125,
+          "grounded_in": {
+            "context_sentence": "The transformer was introduced in 2017 by Vaswani et al.",
+            "context_id": "chunk_0",
+            "similarity": 0.3125
+          },
+          "ungrounded_parts": [
+            "The transformer was invented in 2014 by Donald Trump at Google."
+          ]
+        },
+        {
+          "sentence": "It uses\n            attention mechanisms for processing.",
+          "grounded": false,
+          "confidence": 0.42857142857142855,
+          "grounded_in": {
+            "context_sentence": "It uses attention\n            mechanisms.",
+            "context_id": "chunk_1",
+            "similarity": 0.42857142857142855
+          },
+          "ungrounded_parts": [
+            "It uses\n            attention mechanisms for processing."
+          ]
+        },
+        {
+          "sentence": "The model achieved 99.9% accuracy on\n            all benchmarks.",
+          "grounded": false,
+          "confidence": 0.45454545454545453,
+          "grounded_in": {
+            "context_sentence": "The model achieved strong performance on various benchmarks.",
+            "context_id": "chunk_2",
+            "similarity": 0.45454545454545453
+          },
+          "ungrounded_parts": [
+            "The model achieved 99.9% accuracy on\n            all benchmarks."
+          ]
+        }
+      ],
+      "verified_facts": [],
+      "hallucinated_facts": [
+        {
+          "sentence": "The transformer was invented in 2014 by Donald Trump at Google.",
+          "severity": "MODERATE",
+          "weight": 0.5,
+          "grounding": {
+            "sentence": "The transformer was invented in 2014 by Donald Trump at Google.",
+            "grounded": false,
+            "confidence": 0.3125,
+            "grounded_in": {
+              "context_sentence": "The transformer was introduced in 2017 by Vaswani et al.",
+              "context_id": "chunk_0",
+              "similarity": 0.3125
+            },
+            "ungrounded_parts": [
+              "The transformer was invented in 2014 by Donald Trump at Google."
+            ]
+          }
+        },
+        {
+          "sentence": "It uses\n            attention mechanisms for processing.",
+          "severity": "MODERATE",
+          "weight": 0.5,
+          "grounding": {
+            "sentence": "It uses\n            attention mechanisms for processing.",
+            "grounded": false,
+            "confidence": 0.42857142857142855,
+            "grounded_in": {
+              "context_sentence": "It uses attention\n            mechanisms.",
+              "context_id": "chunk_1",
+              "similarity": 0.42857142857142855
+            },
+            "ungrounded_parts": [
+              "It uses\n            attention mechanisms for processing."
+            ]
+          }
+        },
+        {
+          "sentence": "The model achieved 99.9% accuracy on\n            all benchmarks.",
+          "severity": "MINOR",
+          "weight": 0.1,
+          "grounding": {
+            "sentence": "The model achieved 99.9% accuracy on\n            all benchmarks.",
+            "grounded": false,
+            "confidence": 0.45454545454545453,
+            "grounded_in": {
+              "context_sentence": "The model achieved strong performance on various benchmarks.",
+              "context_id": "chunk_2",
+              "similarity": 0.45454545454545453
+            },
+            "ungrounded_parts": [
+              "The model achieved 99.9% accuracy on\n            all benchmarks."
+            ]
+          }
+        }
+      ],
+      "response_triples": [
+        [
+          "It",
+          "uses",
+          "mechanisms"
+        ],
+        [
+          "model",
+          "achieved",
+          "accuracy"
+        ]
+      ],
+      "context_triples": [
+        [
+          "It",
+          "uses",
+          "mechanisms"
+        ],
+        [
+          "model",
+          "achieved",
+          "performance"
+        ]
+      ],
+      "cross_doc_consistency": {},
+      "confidence_level": "MEDIUM",
+      "status": "\u26a0\ufe0f  ACCEPTABLE",
+      "improvements_applied": [
+        "Smart Tokenization (spaCy)",
+        "Adaptive Semantic Threshold",
+        "Paraphrasing Detection",
+        "Grounding Chain Attribution",
+        "Hallucination Severity Levels",
+        "Fact Triple Extraction",
+        "Cross-Document Consistency"
+      ],
+      "test_name": "Partially Hallucinated (Mixed Facts)",
+      "expected_quality": "WARNING",
+      "doc_type": "technical",
+      "actual_quality": "GOOD",
+      "match_expected": false
+    },
+    {
+      "hallucination_score": 0.5,
+      "hallucination_percent": 50.0,
+      "total_sentences": 3,
+      "verified_count": 0,
+      "hallucinated_count": 3,
+      "severity_breakdown": {
+        "MINOR": 0,
+        "MODERATE": 2,
+        "MAJOR": 0,
+        "CRITICAL": 1
+      },
+      "grounding_chains": [
+        {
+          "sentence": "The transformer was invented by aliens in 1950.",
+          "grounded": false,
+          "confidence": 0.18181818181818182,
+          "grounded_in": {
+            "context_sentence": "The transformer uses attention mechanisms.",
+            "context_id": "chunk_0",
+            "similarity": 0.18181818181818182
+          },
+          "ungrounded_parts": [
+            "The transformer was invented by aliens in 1950."
+          ]
+        },
+        {
+          "sentence": "It uses quantum mechanics\n            and telepathy for processing.",
+          "grounded": false,
+          "confidence": 0.08333333333333333,
+          "grounded_in": {
+            "context_sentence": "The transformer uses attention mechanisms.",
+            "context_id": "chunk_0",
+            "similarity": 0.08333333333333333
+          },
+          "ungrounded_parts": [
+            "It uses quantum mechanics\n            and telepathy for processing."
+          ]
+        },
+        {
+          "sentence": "The model is controlled by the moon and can\n            read human minds.",
+          "grounded": false,
+          "confidence": 0.06666666666666667,
+          "grounded_in": {
+            "context_sentence": "The transformer uses attention mechanisms.",
+            "context_id": "chunk_0",
+            "similarity": 0.06666666666666667
+          },
+          "ungrounded_parts": [
+            "The model is controlled by the moon and can\n            read human minds."
+          ]
+        }
+      ],
+      "verified_facts": [],
+      "hallucinated_facts": [
+        {
+          "sentence": "The transformer was invented by aliens in 1950.",
+          "severity": "MODERATE",
+          "weight": 0.5,
+          "grounding": {
+            "sentence": "The transformer was invented by aliens in 1950.",
+            "grounded": false,
+            "confidence": 0.18181818181818182,
+            "grounded_in": {
+              "context_sentence": "The transformer uses attention mechanisms.",
+              "context_id": "chunk_0",
+              "similarity": 0.18181818181818182
+            },
+            "ungrounded_parts": [
+              "The transformer was invented by aliens in 1950."
+            ]
+          }
+        },
+        {
+          "sentence": "It uses quantum mechanics\n            and telepathy for processing.",
+          "severity": "MODERATE",
+          "weight": 0.5,
+          "grounding": {
+            "sentence": "It uses quantum mechanics\n            and telepathy for processing.",
+            "grounded": false,
+            "confidence": 0.08333333333333333,
+            "grounded_in": {
+              "context_sentence": "The transformer uses attention mechanisms.",
+              "context_id": "chunk_0",
+              "similarity": 0.08333333333333333
+            },
+            "ungrounded_parts": [
+              "It uses quantum mechanics\n            and telepathy for processing."
+            ]
+          }
+        },
+        {
+          "sentence": "The model is controlled by the moon and can\n            read human minds.",
+          "severity": "CRITICAL",
+          "weight": 2.0,
+          "grounding": {
+            "sentence": "The model is controlled by the moon and can\n            read human minds.",
+            "grounded": false,
+            "confidence": 0.06666666666666667,
+            "grounded_in": {
+              "context_sentence": "The transformer uses attention mechanisms.",
+              "context_id": "chunk_0",
+              "similarity": 0.06666666666666667
+            },
+            "ungrounded_parts": [
+              "The model is controlled by the moon and can\n            read human minds."
+            ]
+          }
+        }
+      ],
+      "response_triples": [
+        [
+          "It",
+          "uses",
+          "mechanics"
+        ]
+      ],
+      "context_triples": [
+        [
+          "transformer",
+          "uses",
+          "mechanisms"
+        ]
+      ],
+      "cross_doc_consistency": {},
+      "confidence_level": "LOW",
+      "status": "\u274c HIGH RISK",
+      "improvements_applied": [
+        "Smart Tokenization (spaCy)",
+        "Adaptive Semantic Threshold",
+        "Paraphrasing Detection",
+        "Grounding Chain Attribution",
+        "Hallucination Severity Levels",
+        "Fact Triple Extraction",
+        "Cross-Document Consistency"
+      ],
+      "test_name": "Severe Hallucinations (Fabricated)",
+      "expected_quality": "FAIL",
+      "doc_type": "technical",
+      "actual_quality": "FAIL",
+      "match_expected": true
+    },
+    {
+      "hallucination_score": 0.183,
+      "hallucination_percent": 18.3,
+      "total_sentences": 3,
+      "verified_count": 0,
+      "hallucinated_count": 3,
+      "severity_breakdown": {
+        "MINOR": 1,
+        "MODERATE": 2,
+        "MAJOR": 0,
+        "CRITICAL": 0
+      },
+      "grounding_chains": [
+        {
+          "sentence": "The accuracy reported was 94.7% on the test set.",
+          "grounded": false,
+          "confidence": 0.2777777777777778,
+          "grounded_in": {
+            "context_sentence": "The model achieved 94.7% accuracy on the test set with 93.2% precision\n            and 94.1% recall metrics.",
+            "context_id": "chunk_0",
+            "similarity": 0.2777777777777778
+          },
+          "ungrounded_parts": [
+            "The accuracy reported was 94.7% on the test set."
+          ]
+        },
+        {
+          "sentence": "The precision metric\n            reached 93.2%.",
+          "grounded": false,
+          "confidence": 0.1111111111111111,
+          "grounded_in": {
+            "context_sentence": "The model achieved 94.7% accuracy on the test set with 93.2% precision\n            and 94.1% recall metrics.",
+            "context_id": "chunk_0",
+            "similarity": 0.1111111111111111
+          },
+          "ungrounded_parts": [
+            "The precision metric\n            reached 93.2%."
+          ]
+        },
+        {
+          "sentence": "The recall was 94.1% across all classes.",
+          "grounded": false,
+          "confidence": 0.15789473684210525,
+          "grounded_in": {
+            "context_sentence": "The model achieved 94.7% accuracy on the test set with 93.2% precision\n            and 94.1% recall metrics.",
+            "context_id": "chunk_0",
+            "similarity": 0.15789473684210525
+          },
+          "ungrounded_parts": [
+            "The recall was 94.1% across all classes."
+          ]
+        }
+      ],
+      "verified_facts": [],
+      "hallucinated_facts": [
+        {
+          "sentence": "The accuracy reported was 94.7% on the test set.",
+          "severity": "MINOR",
+          "weight": 0.1,
+          "grounding": {
+            "sentence": "The accuracy reported was 94.7% on the test set.",
+            "grounded": false,
+            "confidence": 0.2777777777777778,
+            "grounded_in": {
+              "context_sentence": "The model achieved 94.7% accuracy on the test set with 93.2% precision\n            and 94.1% recall metrics.",
+              "context_id": "chunk_0",
+              "similarity": 0.2777777777777778
+            },
+            "ungrounded_parts": [
+              "The accuracy reported was 94.7% on the test set."
+            ]
+          }
+        },
+        {
+          "sentence": "The precision metric\n            reached 93.2%.",
+          "severity": "MODERATE",
+          "weight": 0.5,
+          "grounding": {
+            "sentence": "The precision metric\n            reached 93.2%.",
+            "grounded": false,
+            "confidence": 0.1111111111111111,
+            "grounded_in": {
+              "context_sentence": "The model achieved 94.7% accuracy on the test set with 93.2% precision\n            and 94.1% recall metrics.",
+              "context_id": "chunk_0",
+              "similarity": 0.1111111111111111
+            },
+            "ungrounded_parts": [
+              "The precision metric\n            reached 93.2%."
+            ]
+          }
+        },
+        {
+          "sentence": "The recall was 94.1% across all classes.",
+          "severity": "MODERATE",
+          "weight": 0.5,
+          "grounding": {
+            "sentence": "The recall was 94.1% across all classes.",
+            "grounded": false,
+            "confidence": 0.15789473684210525,
+            "grounded_in": {
+              "context_sentence": "The model achieved 94.7% accuracy on the test set with 93.2% precision\n            and 94.1% recall metrics.",
+              "context_id": "chunk_0",
+              "similarity": 0.15789473684210525
+            },
+            "ungrounded_parts": [
+              "The recall was 94.1% across all classes."
+            ]
+          }
+        }
+      ],
+      "response_triples": [
+        [
+          "metric",
+          "reached",
+          "%"
+        ],
+        [
+          "recall",
+          "was",
+          "%"
+        ]
+      ],
+      "context_triples": [
+        [
+          "model",
+          "achieved",
+          "accuracy"
+        ]
+      ],
+      "cross_doc_consistency": {},
+      "confidence_level": "MEDIUM",
+      "status": "\u26a0\ufe0f  ACCEPTABLE",
+      "improvements_applied": [
+        "Smart Tokenization (spaCy)",
+        "Adaptive Semantic Threshold",
+        "Paraphrasing Detection",
+        "Grounding Chain Attribution",
+        "Hallucination Severity Levels",
+        "Fact Triple Extraction",
+        "Cross-Document Consistency"
+      ],
+      "test_name": "Numerical Precision (Data)",
+      "expected_quality": "EXCELLENT",
+      "doc_type": "data",
+      "actual_quality": "GOOD",
+      "match_expected": false
+    },
+    {
+      "hallucination_score": 0.15,
+      "hallucination_percent": 15.0,
+      "total_sentences": 2,
+      "verified_count": 0,
+      "hallucinated_count": 2,
+      "severity_breakdown": {
+        "MINOR": 1,
+        "MODERATE": 1,
+        "MAJOR": 0,
+        "CRITICAL": 0
+      },
+      "grounding_chains": [
+        {
+          "sentence": "Dr. John Smith from MIT collaborated with Prof. Jane Doe from Stanford.",
+          "grounded": false,
+          "confidence": 0.3888888888888889,
+          "grounded_in": {
+            "context_sentence": "Dr. John Smith and Prof. Jane Doe conducted important research at MIT and\n            Stanford respectively.",
+            "context_id": "chunk_0",
+            "similarity": 0.3888888888888889
+          },
+          "ungrounded_parts": [
+            "Dr. John Smith from MIT collaborated with Prof. Jane Doe from Stanford."
+          ]
+        },
+        {
+          "sentence": "Their research was groundbreaking and influential in the field.",
+          "grounded": false,
+          "confidence": 0.16666666666666666,
+          "grounded_in": {
+            "context_sentence": "Their work was highly influential.",
+            "context_id": "chunk_1",
+            "similarity": 0.16666666666666666
+          },
+          "ungrounded_parts": [
+            "Their research was groundbreaking and influential in the field."
+          ]
+        }
+      ],
+      "verified_facts": [],
+      "hallucinated_facts": [
+        {
+          "sentence": "Dr. John Smith from MIT collaborated with Prof. Jane Doe from Stanford.",
+          "severity": "MINOR",
+          "weight": 0.1,
+          "grounding": {
+            "sentence": "Dr. John Smith from MIT collaborated with Prof. Jane Doe from Stanford.",
+            "grounded": false,
+            "confidence": 0.3888888888888889,
+            "grounded_in": {
+              "context_sentence": "Dr. John Smith and Prof. Jane Doe conducted important research at MIT and\n            Stanford respectively.",
+              "context_id": "chunk_0",
+              "similarity": 0.3888888888888889
+            },
+            "ungrounded_parts": [
+              "Dr. John Smith from MIT collaborated with Prof. Jane Doe from Stanford."
+            ]
+          }
+        },
+        {
+          "sentence": "Their research was groundbreaking and influential in the field.",
+          "severity": "MODERATE",
+          "weight": 0.5,
+          "grounding": {
+            "sentence": "Their research was groundbreaking and influential in the field.",
+            "grounded": false,
+            "confidence": 0.16666666666666666,
+            "grounded_in": {
+              "context_sentence": "Their work was highly influential.",
+              "context_id": "chunk_1",
+              "similarity": 0.16666666666666666
+            },
+            "ungrounded_parts": [
+              "Their research was groundbreaking and influential in the field."
+            ]
+          }
+        }
+      ],
+      "response_triples": [],
+      "context_triples": [
+        [
+          "Smith",
+          "conducted",
+          "research"
+        ],
+        [
+          "work",
+          "was",
+          "influential"
+        ]
+      ],
+      "cross_doc_consistency": {},
+      "confidence_level": "MEDIUM",
+      "status": "\u26a0\ufe0f  ACCEPTABLE",
+      "improvements_applied": [
+        "Smart Tokenization (spaCy)",
+        "Adaptive Semantic Threshold",
+        "Paraphrasing Detection",
+        "Grounding Chain Attribution",
+        "Hallucination Severity Levels",
+        "Fact Triple Extraction",
+        "Cross-Document Consistency"
+      ],
+      "test_name": "Abbreviated Names (with Dr., Prof.)",
+      "expected_quality": "GOOD",
+      "doc_type": "general",
+      "actual_quality": "GOOD",
+      "match_expected": true
+    },
+    {
+      "hallucination_score": 0.167,
+      "hallucination_percent": 16.7,
+      "total_sentences": 3,
+      "verified_count": 1,
+      "hallucinated_count": 2,
+      "severity_breakdown": {
+        "MINOR": 0,
+        "MODERATE": 2,
+        "MAJOR": 0,
+        "CRITICAL": 0
+      },
+      "grounding_chains": [
+        {
+          "sentence": "Self-attention is the core\n            component.",
+          "grounded": false,
+          "confidence": 0.125,
+          "grounded_in": {
+            "context_sentence": "Multi-head attention is important.",
+            "context_id": "chunk_1",
+            "similarity": 0.125
+          },
+          "ungrounded_parts": [
+            "Self-attention is the core\n            component."
+          ]
+        },
+        {
+          "sentence": "Multi-head attention enables parallel processing.",
+          "grounded": false,
+          "confidence": 0.2857142857142857,
+          "grounded_in": {
+            "context_sentence": "Multi-head attention is important.",
+            "context_id": "chunk_1",
+            "similarity": 0.2857142857142857
+          },
+          "ungrounded_parts": [
+            "Multi-head attention enables parallel processing."
+          ]
+        }
+      ],
+      "verified_facts": [
+        "The Transformer uses attention mechanisms."
+      ],
+      "hallucinated_facts": [
+        {
+          "sentence": "Self-attention is the core\n            component.",
+          "severity": "MODERATE",
+          "weight": 0.5,
+          "grounding": {
+            "sentence": "Self-attention is the core\n            component.",
+            "grounded": false,
+            "confidence": 0.125,
+            "grounded_in": {
+              "context_sentence": "Multi-head attention is important.",
+              "context_id": "chunk_1",
+              "similarity": 0.125
+            },
+            "ungrounded_parts": [
+              "Self-attention is the core\n            component."
+            ]
+          }
+        },
+        {
+          "sentence": "Multi-head attention enables parallel processing.",
+          "severity": "MODERATE",
+          "weight": 0.5,
+          "grounding": {
+            "sentence": "Multi-head attention enables parallel processing.",
+            "grounded": false,
+            "confidence": 0.2857142857142857,
+            "grounded_in": {
+              "context_sentence": "Multi-head attention is important.",
+              "context_id": "chunk_1",
+              "similarity": 0.2857142857142857
+            },
+            "ungrounded_parts": [
+              "Multi-head attention enables parallel processing."
+            ]
+          }
+        }
+      ],
+      "response_triples": [
+        [
+          "Transformer",
+          "uses",
+          "mechanisms"
+        ],
+        [
+          "attention",
+          "is",
+          "component"
+        ],
+        [
+          "attention",
+          "enables",
+          "processing"
+        ]
+      ],
+      "context_triples": [
+        [
+          "Transformer",
+          "uses",
+          "mechanisms"
+        ],
+        [
+          "attention",
+          "is",
+          "important"
+        ]
+      ],
+      "cross_doc_consistency": {
+        "consistent": true,
+        "consistency_score": 1.5,
+        "contradictions": [],
+        "verified_in_docs": {
+          "The Transformer uses attention mechanisms": [
+            "doc1",
+            "doc2",
+            "doc3"
+          ],
+          "Self-attention is the core\n            component": [
+            "doc1"
+          ],
+          "Multi-head attention enables parallel processing": [
+            "doc1",
+            "doc2"
+          ]
+        },
+        "confidence": 1.5
+      },
+      "confidence_level": "MEDIUM",
+      "status": "\u26a0\ufe0f  ACCEPTABLE",
+      "improvements_applied": [
+        "Smart Tokenization (spaCy)",
+        "Adaptive Semantic Threshold",
+        "Paraphrasing Detection",
+        "Grounding Chain Attribution",
+        "Hallucination Severity Levels",
+        "Fact Triple Extraction",
+        "Cross-Document Consistency"
+      ],
+      "test_name": "Cross-Document Consistency",
+      "expected_quality": "EXCELLENT",
+      "doc_type": "technical",
+      "actual_quality": "GOOD",
+      "match_expected": false
+    }
+  ],
+  "severity_statistics": {
+    "total_hallucinations": 19,
+    "breakdown": {
+      "MINOR": 4,
+      "MODERATE": 14,
+      "MAJOR": 0,
+      "CRITICAL": 1
+    }
+  }
+}

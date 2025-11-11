@@ -29,10 +29,17 @@ wheels/
 .installed.cfg
 *.egg
 
-# Outputs and logs
-/outputs/
-/data/
+# Outputs and logs (retain structure but ignore heavy/generated artifacts)
+outputs/embeddings/models/
+outputs/logs/
 *.log
+
+# Ignore duplicate archived project folder kept locally
+RAG-/
+
+# Ignore large raw data caches but keep the folder itself
+data/**/__pycache__/
+data/**/~$*
 
 # IDE / Editor specific
 .vscode/

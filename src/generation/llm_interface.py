@@ -13,12 +13,11 @@ WHAT THIS MODULE DOES:
 
 THIS IS THE "G" IN RAG (Retrieval-Augmented Generation)
 
-LLM CHOICE: OpenAI GPT-4 / GPT-3.5-turbo
+LLM CHOICE: Google Gemini (2.x / 1.5 series)
 RATIONALE:
-- Production-ready API with high reliability
 - Strong reasoning and instruction following
-- Good balance of quality and cost
-- Easy to deploy (no local hosting needed)
+- Excellent cost/latency trade-off (Flash for speed)
+- Reliable API with simple deployment
 
 ALTERNATIVE OPTIONS (Trade-offs):
 1. Anthropic Claude
@@ -31,16 +30,15 @@ ALTERNATIVE OPTIONS (Trade-offs):
    - Cons: Requires GPU/compute, harder deployment, lower quality
    - When to use: Privacy-critical applications, high volume
 
-3. Azure OpenAI
-   - Pros: Enterprise SLA, data residency options
-   - Cons: More expensive, setup complexity
-   - When to use: Enterprise deployments
+3. Azure OpenAI (not used here)
+    - Pros: Enterprise SLA, data residency options
+    - Cons: Setup complexity
+    - When to use: Enterprise constraints (out of scope here)
 
-CHOSEN: OpenAI GPT-3.5-turbo for development, GPT-4 for production
-- Best quality/cost trade-off
+CHOSEN: Gemini 2.5 Flash (primary) / Gemini Pro as fallback model id
 - Fast response times (~1-2 seconds)
-- Reliable API
-- Can upgrade to GPT-4 if needed
+- Low cost
+- Multi-modal ready (future-proof)
 
 PROMPT ENGINEERING STRATEGY:
 - Clear instruction: "Answer based only on context"
@@ -67,10 +65,6 @@ from typing import Optional, Dict, List, Tuple
 from dotenv import load_dotenv
 import requests
 import google.generativeai as genai
-try:
-    from openai import OpenAI
-except Exception:  # allow running if openai not installed
-    OpenAI = None
 
 load_dotenv()
 
@@ -79,7 +73,7 @@ load_dotenv()
 # ==============================================================================
 
 # Model configuration
-DEFAULT_MODEL = "gemini-pro"  # Gemini Pro
+DEFAULT_MODEL = "gemini-2.5-flash"  # Default Gemini model
 
 # Generation parameters
 DEFAULT_TEMPERATURE = 0.1  # Low temperature = more deterministic
@@ -120,14 +114,12 @@ Answer the question based on the context above. If the answer is not in the cont
 # ==============================================================================
 
 class LLMInterface:
-    """Unified LLM interface with automatic provider fallback.
+    """Gemini-only LLM interface.
 
-    Order: Gemini → OpenAI (rotate keys) → OpenRouter.
-    Environment variables supported:
-      GEMINI_API_KEY
-      OPENAI_API_KEY / OPENAI_API_KEY_1..3 / OPENAI_API_KEYS (comma separated)
-      OPENROUTER_API_KEY, OPENROUTER_MODEL (default: openrouter/auto)
-      MODEL_NAME (override default model preference)
+    Attempts a list of Gemini model identifiers; returns first successful response.
+    Environment variables:
+      GEMINI_API_KEY (required for generation)
+      MODEL_NAME (optional override for default model)
     """
 
     def __init__(
@@ -135,264 +127,122 @@ class LLMInterface:
         api_key: Optional[str] = None,
         model: str = DEFAULT_MODEL,
         temperature: float = DEFAULT_TEMPERATURE,
-        max_tokens: int = DEFAULT_MAX_TOKENS
+        max_tokens: int = DEFAULT_MAX_TOKENS,
     ):
         self.temperature = temperature
         self.max_tokens = max_tokens
         self.model_name = os.getenv("MODEL_NAME", model)
-
-        # Gemini key (explicit api_key takes precedence)
         self.gemini_key = api_key or os.getenv("GEMINI_API_KEY")
 
-        # Aggregate OpenAI keys from multiple patterns
-        keys: List[str] = []
-        csv_keys = os.getenv("OPENAI_API_KEYS", "").strip()
-        if csv_keys:
-            keys.extend([k.strip() for k in csv_keys.split(',') if k.strip()])
-        for name in ["OPENAI_API_KEY", "OPENAI_API_KEY_1", "OPENAI_API_KEY_2", "OPENAI_API_KEY_3"]:
-            v = os.getenv(name)
-            if v and v not in keys:
-                keys.append(v)
-        self.openai_keys = keys
-
-        # OpenRouter
-        self.openrouter_key = os.getenv("OPENROUTER_API_KEY")
-        self.openrouter_model = os.getenv("OPENROUTER_MODEL", "openrouter/auto")
-
-        print("\n" + "="*80)
-        print("INITIALIZING LLM INTERFACE (Gemini → OpenAI → OpenRouter)")
-        print("="*80)
+        print("\n" + "=" * 80)
+        print("INITIALIZING LLM INTERFACE (Gemini only)")
+        print("=" * 80)
         print(f"Model preference: {self.model_name}")
         print(f"Gemini key: {'set' if self.gemini_key else 'not set'}")
-        print(f"OpenAI keys detected: {len(self.openai_keys)}")
-        print(f"OpenRouter key: {'set' if self.openrouter_key else 'not set'}")
         print("✓ LLM interface initialized\n")
-    
+
     def generate_answer(
         self,
         query: str,
         context: str,
         temperature: Optional[float] = None,
         max_tokens: Optional[int] = None,
-        verbose: bool = False
+        verbose: bool = False,
     ) -> Dict:
-        """
-        Generate answer using LLM with retrieved context.
-        """
-        if verbose:
-            print(f"\n{'='*80}")
-            print(f"GENERATING ANSWER (Fallback enabled)")
-            print(f"{'='*80}")
-            print(f"Query: {query}")
-            print(f"Context length: {len(context)} characters")
-
+        """Generate answer using Gemini models only."""
         temp = temperature if temperature is not None else self.temperature
         max_tok = max_tokens if max_tokens is not None else self.max_tokens
         user_prompt = USER_PROMPT_TEMPLATE.format(context=context, query=query)
 
+        if not self.gemini_key:
+            return {
+                'answer': 'Error: GEMINI_API_KEY not configured',
+                'model': self.model_name,
+                'provider': 'gemini',
+                'tokens_used': {'total_tokens': 0},
+                'query': query,
+                'error': 'missing_api_key'
+            }
+
+        gemini_candidates: List[str] = []
+        if self.model_name.startswith("gemini"):
+            gemini_candidates.append(self.model_name)
+        for m in [
+            "gemini-2.5-flash",
+            "gemini-2.5-pro",
+            "gemini-2.0-flash",
+            "gemini-1.5-flash-latest",
+            "gemini-1.5-pro-latest",
+            "gemini-1.5-flash-8b",
+            "gemini-pro",
+        ]:
+            if m not in gemini_candidates:
+                gemini_candidates.append(m)
+
         errors: List[str] = []
+        genai.configure(api_key=self.gemini_key)
 
-        # 1. Gemini (attempt multiple candidate model names to handle API/version changes)
-        if self.gemini_key:
-            gemini_candidates = []
-            # Preferred explicit model name from environment
-            if self.model_name.startswith("gemini"):
-                gemini_candidates.append(self.model_name)
-            # Common current public model identifiers (ordered by quality/latency tradeoff)
-            for m in [
-                # Newer 2.x series
-                "gemini-2.5-pro",
-                "gemini-2.5-flash",
-                "gemini-2.0-flash",
-                # 1.5 series fallbacks
-                "gemini-1.5-pro-latest",
-                "gemini-1.5-flash-latest",
-                "gemini-1.5-pro",
-                "gemini-1.5-flash",
-                "gemini-1.5-flash-8b",
-                # Legacy
-                "gemini-pro",
-            ]:
-                if m not in gemini_candidates:
-                    gemini_candidates.append(m)
+        for cand in gemini_candidates:
             try:
-                genai.configure(api_key=self.gemini_key)
-                for cand in gemini_candidates:
-                    if verbose:
-                        print(f"\nAttempting Gemini...")
-                        print(f"  Candidate Model: {cand}")
+                ids_to_try = [cand]
+                if not cand.startswith("models/"):
+                    ids_to_try.append(f"models/{cand}")
+                model_obj = None
+                last_error = None
+                for mid in ids_to_try:
                     try:
-                        # Try both plain id and fully-qualified resource name
-                        ids_to_try = [cand]
-                        if not cand.startswith("models/"):
-                            ids_to_try.append(f"models/{cand}")
-                        model = None
-                        last_error = None
-                        for mid in ids_to_try:
-                            try:
-                                model = genai.GenerativeModel(mid)
-                                break
-                            except Exception as ge_inner:
-                                last_error = ge_inner
-                                continue
-                        if model is None:
-                            raise last_error or Exception("Unknown Gemini model init error")
-                        response = model.generate_content([
-                            SYSTEM_PROMPT,
-                            user_prompt
-                        ], generation_config=genai.types.GenerationConfig(temperature=temp))
-                        answer = (getattr(response, 'text', '') or '').strip()
-                        if answer:
-                            return {
-                                'answer': answer,
-                                'model': cand,
-                                'provider': 'gemini',
-                                'tokens_used': {'total_tokens': 'N/A'},
-                                'query': query
-                            }
-                        else:
-                            errors.append(f"Gemini model {cand} returned empty response")
-                    except Exception as ge:
-                        errors.append(f"Gemini model {cand} error: {ge}")
-                        if verbose:
-                            print(f"❌ Gemini model {cand} failed: {ge}")
-                # If loop completes without success
-            except Exception as e:
-                errors.append(f"Gemini setup error: {e}")
-                if verbose:
-                    print(f"❌ Gemini setup failed: {e}")
-
-        # 2. OpenAI (iterate keys)
-        if self.openai_keys and OpenAI is not None:
-            for idx, key in enumerate(self.openai_keys, start=1):
-                try:
-                    if verbose:
-                        print(f"\nAttempting OpenAI with key #{idx}...")
-                    client = OpenAI(api_key=key)
-                    openai_model = self.model_name if self.model_name.startswith("gpt") else "gpt-3.5-turbo"
-                    response = client.chat.completions.create(
-                        model=openai_model,
-                        messages=[
-                            {"role": "system", "content": SYSTEM_PROMPT},
-                            {"role": "user", "content": user_prompt},
-                        ],
-                        temperature=temp,
-                        max_tokens=max_tok,
-                        top_p=DEFAULT_TOP_P,
-                    )
-                    answer = response.choices[0].message.content.strip()
-                    tokens_used = {
-                        'prompt_tokens': getattr(response.usage, 'prompt_tokens', None),
-                        'completion_tokens': getattr(response.usage, 'completion_tokens', None),
-                        'total_tokens': getattr(response.usage, 'total_tokens', None),
-                    }
+                        model_obj = genai.GenerativeModel(mid)
+                        break
+                    except Exception as ge_inner:
+                        last_error = ge_inner
+                        continue
+                if model_obj is None:
+                    raise last_error or Exception("model init failed")
+                response = model_obj.generate_content([
+                    SYSTEM_PROMPT,
+                    user_prompt,
+                ], generation_config=genai.types.GenerationConfig(temperature=temp))
+                answer = (getattr(response, 'text', '') or '').strip()
+                if answer:
                     return {
                         'answer': answer,
-                        'model': openai_model,
-                        'provider': 'openai',
-                        'tokens_used': tokens_used,
-                        'query': query
+                        'model': cand,
+                        'provider': 'gemini',
+                        'tokens_used': {'total_tokens': 'N/A'},
+                        'query': query,
                     }
-                except Exception as e:
-                    errors.append(f"OpenAI key #{idx} error: {e}")
-                    if verbose:
-                        print(f"❌ OpenAI key #{idx} failed: {e}")
-
-        # 3. OpenRouter
-        if self.openrouter_key:
-            try:
-                if verbose:
-                    print("\nAttempting OpenRouter...")
-                    print(f"  Model: {self.openrouter_model}")
-                url = "https://openrouter.ai/api/v1/chat/completions"
-                headers = {
-                    "Authorization": f"Bearer {self.openrouter_key}",
-                    "Content-Type": "application/json"
-                }
-                payload = {
-                    "model": self.openrouter_model,
-                    "messages": [
-                        {"role": "system", "content": SYSTEM_PROMPT},
-                        {"role": "user", "content": user_prompt},
-                    ],
-                    "temperature": temp,
-                    "max_tokens": max_tok
-                }
-                r = requests.post(url, json=payload, headers=headers, timeout=60)
-                r.raise_for_status()
-                data = r.json()
-                answer = data['choices'][0]['message']['content'].strip()
-                return {
-                    'answer': answer,
-                    'model': self.openrouter_model,
-                    'provider': 'openrouter',
-                    'tokens_used': {'total_tokens': data.get('usage', {}).get('total_tokens')},
-                    'query': query
-                }
+                errors.append(f"empty response {cand}")
             except Exception as e:
-                errors.append(f"OpenRouter error: {e}")
+                errors.append(f"{cand}: {e}")
                 if verbose:
-                    print(f"❌ OpenRouter failed: {e}")
+                    print(f"Gemini model {cand} failed: {e}")
 
-        # Final failure result
         return {
-            'answer': 'Error: all providers failed',
+            'answer': 'Error: all Gemini variants failed',
             'model': self.model_name,
-            'provider': 'none',
+            'provider': 'gemini',
             'tokens_used': {'total_tokens': 0},
             'query': query,
-            'error': '; '.join(errors) if errors else 'no providers configured'
+            'error': '; '.join(errors) if errors else 'unknown'
         }
-    
+
     def generate_with_sources(
         self,
         query: str,
         retrieved_chunks: List[Dict],
-        verbose: bool = False
+        verbose: bool = False,
     ) -> Dict:
-        """
-        Generate answer and include source attribution.
-        
-        USE CASE: When you want to show which documents were used
-        
-        PARAMETERS:
-            query (str): User question
-            retrieved_chunks (List[Dict]): Chunks from retriever
-                Each dict should have 'text' and 'source' keys
-            verbose (bool): Print details
-        
-        RETURNS:
-            Dict with:
-                - 'answer': Generated answer
-                - 'sources': List of source documents used
-                - 'chunks_used': Number of chunks provided
-                - (other metadata)
-        
-        EXAMPLE:
-            chunks = retriever.retrieve("What is transformer?", k=5)
-            result = llm.generate_with_sources(query, chunks)
-            
-            print(result['answer'])
-            print(f"Sources: {', '.join(result['sources'])}")
-        """
-        # Format context from chunks
-        context_parts = []
+        """Generate answer and attach source list."""
+        context_parts: List[str] = []
         for i, chunk in enumerate(retrieved_chunks, 1):
             context_parts.append(
-                f"Context {i} (Source: {chunk.get('source', 'unknown')}):\n"
-                f"{chunk['text']}\n"
+                f"Context {i} (Source: {chunk.get('source', 'unknown')}):\n{chunk.get('text','')}\n"
             )
-        
         context = "\n".join(context_parts)
-        
-        # Generate answer
         result = self.generate_answer(query, context, verbose=verbose)
-        
-        # Add source information
         sources = list({chunk.get('source', 'unknown') for chunk in retrieved_chunks})
         result['sources'] = sources
         result['chunks_used'] = len(retrieved_chunks)
-        
         return result
 
 

@@ -19,6 +19,11 @@ import os
 from pathlib import Path
 from typing import List, Dict
 
+import sys
+PROJECT_ROOT = Path(__file__).resolve().parent.parent
+if str(PROJECT_ROOT) not in sys.path:
+    sys.path.insert(0, str(PROJECT_ROOT))
+
 from src.preprocessing.chunker import normalize_text, chunk_text
 from src.loaders.pdf_loader import load_pdf_data
 from src.loaders.docx_loader import load_docx_data
@@ -31,9 +36,10 @@ def collect_documents() -> List[Dict]:
     pdf_dir = base / 'pdfs'
     doc_dir = base / 'documents'
     tbl_dir = base / 'tables'
+    raw_dir = base / 'raw_documents'
 
     files: List[Path] = []
-    for d in [pdf_dir, doc_dir, tbl_dir]:
+    for d in [pdf_dir, doc_dir, tbl_dir, raw_dir]:
         if d.exists():
             for p in d.rglob('*'):
                 if p.suffix.lower() in {'.pdf', '.docx', '.xlsx', '.xls', '.csv'}:
@@ -81,10 +87,8 @@ def main():
     args = ap.parse_args()
 
     if args.dense:
-        # Ensure embeddings are enabled unless user explicitly disables
         os.environ.pop('RAG_DISABLE_EMBEDDINGS', None)
     else:
-        # Default to BM25-only unless user passes --dense
         os.environ['RAG_DISABLE_EMBEDDINGS'] = '1'
 
     print("Collecting documents from data/ ...")

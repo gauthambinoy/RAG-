@@ -1,5 +1,5 @@
 # ==============================================================================
-# FILE: load_csv.py
+# FILE: excel_loader.py
 # PURPOSE: Load Excel (.xlsx, .xls) and CSV files into text format for RAG
 # ==============================================================================
 
@@ -45,23 +45,22 @@ def load_excel_or_csv(file_path):
             # This keeps data consistent and avoids precision issues
             print("Detected CSV file. Loading with pandas.read_csv()...")
             df = pd.read_csv(file_path, dtype=str)
-            
         elif file_extension in ['.xlsx', '.xls']:
             # --- Load Excel File ---
             # DECISION: We use pandas.read_excel() for Excel files
-            # sheet_name=0 means read the FIRST sheet only
+            # Prefer sheet from env (INFLATION_SHEET_NAME) else first sheet (0)
             # If you need multiple sheets, you can change this later
             # dtype=str keeps everything as text
             print(f"Detected Excel file ({file_extension}). Loading with pandas.read_excel()...")
-            
+
             # Choose the right engine based on file type
             if file_extension == '.xlsx':
                 engine = 'openpyxl'  # Modern Excel files use openpyxl
             else:
                 engine = 'xlrd'      # Older .xls files use xlrd
-                
-            df = pd.read_excel(file_path, sheet_name=0, dtype=str, engine=engine)
-            
+            sheet_env = os.getenv('INFLATION_SHEET_NAME')
+            sheet_to_use = sheet_env if sheet_env and sheet_env.strip() else 0
+            df = pd.read_excel(file_path, sheet_name=sheet_to_use, dtype=str, engine=engine)
         else:
             print(f"!!! ERROR: Unsupported file type: {file_extension} !!!")
             return None
@@ -96,15 +95,85 @@ def load_excel_or_csv(file_path):
                 row_text = " | ".join(row_parts)
                 text_lines.append(row_text)
         
-        # --- STEP 4: Join all rows into one big text string ---
-        # Each row is separated by a newline (\n)
-        full_text = "\n".join(text_lines)
+        # --- STEP 4: Compute optional domain-specific summaries (Inflation rates) ---
+        # Attempt to detect a YEAR column and an INDEX-like numeric column and compute YoY inflation
+        # Allow explicit column config via environment variables
+        env_year_col = os.getenv('INFLATION_YEAR_COLUMN')
+        env_index_col = os.getenv('INFLATION_INDEX_COLUMN')
+
+        def _detect_year_column(df_str: pd.DataFrame):
+            candidates = []
+            for col in df_str.columns:
+                series = df_str[col].astype(str).str.strip()
+                # 4-digit year heuristic
+                is_year = series.str.fullmatch(r"\d{4}")
+                count_year = is_year.sum()
+                ratio = count_year / max(1, len(series))
+                if ratio >= 0.3:  # at least 30% look like years
+                    # basic range filter
+                    years = pd.to_numeric(series.where(is_year), errors='coerce')
+                    in_range = years.between(1800, 2100).sum()
+                    in_ratio = in_range / max(1, count_year)
+                    if in_ratio >= 0.9:
+                        candidates.append((col, ratio))
+            if not candidates:
+                return None
+            return max(candidates, key=lambda x: x[1])[0]
+
+        def _detect_index_column(df_str: pd.DataFrame, year_col):
+            best = None
+            best_count = 0
+            for col in df_str.columns:
+                if col == year_col:
+                    continue
+                series = pd.to_numeric(df_str[col], errors='coerce')
+                count = series.notna().sum()
+                if count < 10:
+                    continue
+                if series.nunique(dropna=True) <= 3:
+                    continue
+                if count > best_count:
+                    best = col
+                    best_count = count
+            return best
+
+        inflation_lines = []
+        try:
+            year_col = env_year_col if env_year_col in df.columns else _detect_year_column(df)
+            index_col = env_index_col if env_index_col in df.columns else _detect_index_column(df, year_col)
+            if year_col and index_col:
+                df_num = df.copy()
+                df_num["__year__"] = pd.to_numeric(df_num[year_col], errors='coerce')
+                df_num["__idx__"] = pd.to_numeric(df_num[index_col], errors='coerce')
+                # drop rows without year or index
+                df_num = df_num.dropna(subset=["__year__", "__idx__"]).copy()
+                # aggregate by year (mean to be robust to multiple rows/months)
+                by_year = df_num.groupby("__year__")["__idx__"].mean().sort_index()
+                # compute YoY %
+                yoy = by_year.pct_change() * 100.0
+                for y, pct in yoy.dropna().items():
+                    prev = by_year.loc[y - 1] if (y - 1) in by_year.index else None
+                    curr = by_year.loc[y]
+                    if prev is None or curr is None:
+                        continue
+                    inflation_lines.append(
+                        f"Computed Inflation Rate | Year: {int(y)} | Rate: {pct:.2f}% | Index(prev={prev:.4f} → curr={curr:.4f}) | Columns: YEAR='{year_col}', INDEX='{index_col}'"
+                    )
+        except Exception as _e:
+            # Non-fatal: fall back without computed rates
+            pass
+
+        # --- STEP 5: Join all rows into one big text string ---
+        # Each row is separated by a newline (\n). Append computed summaries (if any).
+        full_text = "\n".join(text_lines + ( [""] + inflation_lines if inflation_lines else [] ))
         
         print(f"Converted to text: {len(text_lines)} rows")
+        if inflation_lines:
+            print(f"Added computed summaries: {len(inflation_lines)} inflation-rate rows")
         print("--- Loading complete! ---")
         
         return full_text
-    
+
     except Exception as e:
         # Catch any errors that happen during loading
         print(f"!!! ERROR: Failed to load file: {e} !!!")
@@ -112,7 +181,7 @@ def load_excel_or_csv(file_path):
 
 
 # --- Self-Test Block ---
-# This code only runs when you execute THIS file directly (python load_csv.py)
+# This code only runs when you execute THIS file directly (python excel_loader.py)
 # It won't run when you import this file in another script
 if __name__ == "__main__":
     print("="*70)

@@ -178,12 +178,16 @@ class Retriever:
             print("⚠ Hybrid requested but BM25 not available")
 
         # Reranker setup (lazy-load by default)
-        self.use_reranker = use_reranker and RERANKER_AVAILABLE
+        # Allow enabling via env: RAG_ENABLE_RERANKER=1|true|yes
+        env_rerank_flag = os.getenv("RAG_ENABLE_RERANKER", "0").strip().lower() in {"1", "true", "yes", "on"}
+        self.use_reranker = (use_reranker or env_rerank_flag) and RERANKER_AVAILABLE
         self.reranker: Optional[CrossEncoderReranker] = None
         if self.use_reranker:
             # Initialize reranker with lazy_load=True (only load on first use)
             self.reranker = CrossEncoderReranker(lazy_load=True)
-        elif use_reranker and not RERANKER_AVAILABLE:
+            if env_rerank_flag:
+                print("✓ Reranker enabled via RAG_ENABLE_RERANKER")
+        elif (use_reranker or env_rerank_flag) and not RERANKER_AVAILABLE:
             print("⚠ Reranker requested but not available")
 
         # Ready flag (set after build/load)

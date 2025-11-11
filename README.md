@@ -8,9 +8,9 @@ This repository contains a complete, production-ready Retrieval-Augmented Genera
 
 ## 📋 Core Features
 
--   **Hybrid Retrieval Pipeline**: Combines the strengths of keyword-based search (BM25) and semantic vector search (FAISS) using Reciprocal Rank Fusion (RRF) to retrieve the most relevant document chunks.
--   **Cross-Encoder Reranking**: Employs a `cross-encoder` model to re-rank the initial retrieved results for maximum precision before passing them to the generator.
--   **Multi-LLM Generation Strategy**: Ensures high availability and cost-effectiveness by using a fallback chain: **Google Gemini** -> **OpenAI GPT** -> **OpenRouter (Free Models)**.
+-   **Hybrid Retrieval Pipeline**: Combines the strengths of keyword-based search (BM25) and semantic vector search (FAISS) using Reciprocal Rank Fusion (RRF) to retrieve the most relevant document chunks. Hybrid is optional; dense-only works out of the box.
+-   **Optional Cross-Encoder Reranking**: Can re-rank the initial retrieved results for maximum precision via `RAG_ENABLE_RERANKER=1` (lazy-loaded). Off by default for speed.
+-   **Gemini-Only Generation (Challenge Mode)**: Clean, single-provider LLM interface using Google Gemini (default: `gemini-2.5-flash`). Keeps setup simple and aligns with “any LLM interface” requirement.
 -   **Source Citations**: The generated answer includes inline citations `[Source: file_name.pdf, Page: X]` to link back to the source documents, ensuring verifiability.
 -   **Deployment Ready**: Comes with a `Dockerfile` for easy containerization and deployment on cloud platforms like AWS, GCP, or Azure.
 -   **Modular & Scalable Architecture**: The `src` directory is organized by function (loaders, preprocessing, retrieval, generation), making the system easy to maintain and extend.
@@ -94,6 +94,26 @@ streamlit run app/dashboard.py
 ```bash
 uvicorn app.api:app --host 0.0.0.0 --port 8000
 ```
+
+#### Health check (no server needed)
+
+You can verify the API and pipeline readiness using a small script that triggers FastAPI's startup in-process and checks the `/health` endpoint:
+
+```bash
+python scripts/health_check.py
+```
+
+It exits with code 0 when healthy and prints basic stats.
+
+#### Optional: enable cross-encoder reranker
+
+Reranking can further improve the quality of the top results. Enable it via environment variable (lazy-loaded on first use):
+
+```bash
+export RAG_ENABLE_RERANKER=1   # accepted: 1/true/yes/on
+```
+
+Note: If the reranker dependency isn't installed, the system will continue without reranking and print a warning.
 
 ---
 
@@ -204,7 +224,7 @@ This section details the key design decisions and their rationale.
 | OpenAI (gpt-4o-mini) | 0 | - | - | - |
 | OpenRouter | 0 | - | - | - |
 
-*Note: All queries successfully handled by Gemini primary provider.*
+*Note: All queries successfully handled by Gemini primary provider. The system is currently configured to use Gemini only.*
 
 ### **Sample Query Results**
 
